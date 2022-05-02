@@ -17,7 +17,15 @@
 
 #define Pi 3.1415926535f;
 constexpr float BIAS = 1e-8f;
-constexpr float epsi = 1e-3f;
+constexpr float epsi = 1e-5f;
+
+
+bool is_equal(float, float);
+
+bool is_equal(float left, float right)
+{
+	return fabs(left - right) <= epsi;
+}
 
 using namespace cimg_library;
 using namespace std;
@@ -33,11 +41,12 @@ public:
 
 	Vector_3_float operator+(const Vector_3_float&);
 	Vector_3_float operator-(const Vector_3_float&);
-	float operator*(const Vector_3_float&);
+	/*float operator*(const Vector_3_float&);*/
 	Vector_3_float operator*(const float&);
 	float operator^(const Vector_3_float&);
 
 	Vector_3_float V_product(const Vector_3_float&);
+	float D_product(const Vector_3_float&);
 
 	void normalize(void);
 	float magnitude(void);
@@ -96,11 +105,12 @@ Vector_3_float Vector_3_float::operator-(const Vector_3_float& other)
 	return rez;
 }
 
-float Vector_3_float::operator*(const Vector_3_float& other)
-{
-	float dot_product = this->vec1_ * other.vec1_ + this->vec2_ * other.vec2_ + this->vec3_ * other.vec3_;
-	return dot_product;
-}
+//float Vector_3_float::operator*(const Vector_3_float& other)
+//{
+//	float dot_product = this->vec1_ * other.vec1_ + this->vec2_ * other.vec2_ + this->vec3_ * other.vec3_;
+//
+//	return dot_product;
+//}
 
 Vector_3_float Vector_3_float::operator*(const float& value)
 {
@@ -130,6 +140,14 @@ Vector_3_float Vector_3_float::V_product(const Vector_3_float& other)
 
 	return rez;
 }
+
+float Vector_3_float::D_product(const Vector_3_float& other)
+{
+	float dot_product = this->vec1_ * other.vec1_ + this->vec2_ * other.vec2_ + this->vec3_ * other.vec3_;
+
+	return dot_product;
+}
+
 
 
 float Vector_3_float::get_v1(void)
@@ -414,7 +432,7 @@ bool Box::ray_intersect(const float origin_x, const float origin_y, const float 
 
 
 
-	if (dir_x !=0 && dir_y !=0 && dir_z !=0)
+	if (!is_equal(dir_x,0.0) && !is_equal(dir_y,0.0) && !is_equal(dir_z,0.0))
 	{
 		float t1 = (begin.get_v1() - origin_x) / dir_x;
 		float Y1 = origin_y + dir_y * t1;
@@ -756,7 +774,7 @@ Vector_3_float Box::ret_point(const float origin_x, const float origin_y, const 
 
 	}
 
-	if (dir_x == 0 && dir_y != 0 && dir_z != 0)
+	if (is_equal(dir_x,0.0) && !is_equal(dir_y,0.0) && !is_equal(dir_z,0.0))
 	{
 		if (begin.get_v1() <= origin_x && origin_x <= end.get_v1())
 		{
@@ -955,20 +973,41 @@ Vector_3_float Box::ret_point(const float origin_x, const float origin_y, const 
 	}
 
 
-	float min = parameters[0];
+	float min;
+	min = parameters[0];
+
+	/*cout << parameters.capacity() << endl;
+
+	cout << parameters[0] << endl;
+	cout << parameters[1] << endl;*/
+
 
 	for (auto i : parameters)
 	{
-		if (abs(i -min)<BIAS)
+		if (i < min)
 		{
 			min = i;
 		}
 
 	}
 
+	/*cout << "=====" << endl;
+	cout << min << endl;*/
+
 	Vector_3_float origin(origin_x, origin_y, origin_z);
 	Vector_3_float direction(dir_x, dir_y, dir_z);
 	Vector_3_float point = origin + direction * min;
+	//cout << "=====" << endl;
+	//cout << point.get_v1() << endl;
+	//cout << point.get_v2() << endl;
+	//cout << point.get_v3() << endl;
+	//cout << "=====" << endl;
+
+	//cout << dir_x << endl;
+	//cout << dir_y << endl;
+	//cout << dir_z << endl;
+
+
 
 	return point;
 
@@ -987,33 +1026,33 @@ Vector_3_float Box::ret_normal(const float x, const float y, const float z) // Т
 	Vector_3_float diagonal = end - begin;
 
 
-	if (abs(x - begin.get_v1())<epsi)
+	if (fabs(x - begin.get_v1())<epsi)
 	{
 		return n4;
 	}
 
-	if ((x - end.get_v1())<epsi)
+	if (fabs(x - end.get_v1())< epsi)
 	{
 		return n1;
 	}
 
 
-	if (abs(y -begin.get_v2())< epsi)
+	if (fabs(y -begin.get_v2())< epsi)
 	{
 		return n5;
 	}
 
-	if (abs(y - end.get_v2())< epsi)
+	if (fabs(y - end.get_v2())< epsi)
 	{
 		return n2;
 	}
 
-	if (abs(z - begin.get_v3())< epsi)
+	if (fabs(z - begin.get_v3())< epsi)
 	{
 		return n6;
 	}
 
-	if (abs(z - end.get_v3())< epsi)
+	if (fabs(z - end.get_v3())< epsi)
 	{
 		return n3;
 	}
@@ -1061,7 +1100,7 @@ bool Triangle_intersection(const float origin_x, const float origin_y, const flo
 	Vector_3_float pvec = direction.V_product(v0v2);
 
 
-	float det = v0v1 * pvec;
+	float det = v0v1.D_product(pvec);
 
 	if (det < BIAS)
 	{
@@ -1076,7 +1115,8 @@ bool Triangle_intersection(const float origin_x, const float origin_y, const flo
 	float invDet = 1 / det;
 
 	Vector_3_float tvec = origin - v0;
-	float u = tvec * pvec * invDet;
+
+	float u = (tvec.D_product(pvec)) * invDet;
 
 	if (u < 0 || u > 1)
 	{
@@ -1086,14 +1126,14 @@ bool Triangle_intersection(const float origin_x, const float origin_y, const flo
 
 	Vector_3_float qvec = tvec.V_product(v0v1);
 
-	float v = (direction * qvec) * invDet;
+	float v = (direction.D_product(qvec)) * invDet;
 
 	if (v < 0 || u + v > 1)
 	{
 		return false;
 	}
 
-	float t = (v0v2 * qvec) * invDet;
+	float t = (v0v2.D_product(qvec)) * invDet;
 
 	if (t > BIAS)
 	{
@@ -1116,13 +1156,13 @@ float return_param(const float origin_x, const float origin_y, const float origi
 	Vector_3_float v0v2 = v2 - v0;
 	Vector_3_float pvec = direction.V_product(v0v2);
 
-	float det = v0v1 * pvec;
+	float det = v0v1.D_product(pvec);
 	float invDet = 1 / det;
 
 	Vector_3_float tvec = origin - v0;
 	Vector_3_float qvec = tvec.V_product(v0v1);
 
-	float t = (v0v2 * qvec) * invDet;
+	float t = (v0v2.D_product(qvec)) * invDet;
 
 	return t;
 }
@@ -1142,17 +1182,17 @@ bool check_point(const float x_, const float y_, const float z_, Vector_3_float 
 	Vector_3_float v = c.V_product(a);
 	Vector_3_float w = a.V_product(b);
 
-	if (u.magnitude() == 0.0 || v.magnitude() == 0.0 || w.magnitude() == 0.0)
+	if (is_equal(u.magnitude(),0.0) || is_equal(v.magnitude(), 0.0) || is_equal(w.magnitude(), 0.0))
 	{
 		return true;
 	}
 
-	if ((u * v) < 0.0)
+	if ((u.D_product(v)) < 0.0)
 	{
 		return false;
 	}
 
-	if ((u * w) < 0.0)
+	if ((u.D_product(w)) < 0.0)
 	{
 		return false;
 	}
@@ -1275,7 +1315,7 @@ Vector_3_float Tetrahedron::ret_normal(const float x, const float y, const float
 
 		Vector_3_float Normal = u.V_product(v);
 
-		if ((Normal * D) > 0.0)
+		if ((Normal.D_product(D)) > 0.0)
 		{
 			Normal = Normal * -1.0;
 			return Normal;
@@ -1297,7 +1337,7 @@ Vector_3_float Tetrahedron::ret_normal(const float x, const float y, const float
 
 		Vector_3_float Normal = u.V_product(v);
 
-		if ((Normal * D) > 0.0)
+		if ((Normal.D_product(D)) > 0.0)
 		{
 			Normal = Normal * -1.0;
 			return Normal;
@@ -1318,7 +1358,7 @@ Vector_3_float Tetrahedron::ret_normal(const float x, const float y, const float
 
 		Vector_3_float Normal = u.V_product(v);
 
-		if ((Normal * D) > 0.0)
+		if ((Normal.D_product(D)) > 0.0)
 		{
 			Normal = Normal * -1.0;
 			return Normal;
@@ -1339,7 +1379,7 @@ Vector_3_float Tetrahedron::ret_normal(const float x, const float y, const float
 
 		Vector_3_float Normal = u.V_product(v);
 
-		if ((Normal * D) > 0.0)
+		if ((Normal.D_product(D)) > 0.0)
 		{
 			Normal = Normal * -1.0;
 			return Normal;
@@ -2015,9 +2055,9 @@ int main()
 
 			int g = rand() % 31 + 1;
 
-			randomColor[0] = 36;
-			randomColor[1] = 36;
-			randomColor[2] = 36;
+			randomColor[0] = 8 * g;
+			randomColor[1] = 8 * g;
+			randomColor[2] = 8 * g;
 
 			//#pragma omp parallel for
 
@@ -2025,155 +2065,165 @@ int main()
 			{
 				for (int i = 0; i < screen.get_width(); i++)
 				{
+						
+					/*if (i == 300 && j == 482)
+					{*/
+						int Cx = 0;
+						int Cy = 0;
 
-					
-					int Cx = 0;
-					int Cy = 0;
-
-					if (screen.get_width() % 2 == 0)
-					{
-						Cx = i - screen.get_width() / 2;
-					}
-
-					if (screen.get_width() % 2 != 0)
-					{
-						Cx = i - (screen.get_width() - 1) / 2;
-					}
-
-					if (screen.get_height() % 2 == 0)
-					{
-						Cy = (screen.get_height() / 2) - j;
-					}
-
-					if (screen.get_height() % 2 != 0)
-					{
-						Cy = ((screen.get_height() - 1) / 2) - j;
-					}
-
-					/*	cout << Cx << endl << Cy << endl;*/
-
-
-						//// Cx, Cy - координаты точки в плоскости экрана, через которую надо пускать луч, которую надо красить
-
-					float Vx = (float)Cx / (float)screen.get_width(); ///// Объемные координаты точки в плоскости, через которую надо пускать луч, но нету Vz??
-					float Vy = (float)Cy / (float)screen.get_width();
-
-					Vector_3_float unit_up(up.get_v1(), up.get_v2(), up.get_v3());
-					Vector_3_float unit_tangent(tangent.get_v1(), tangent.get_v2(), tangent.get_v3());
-					Vector_3_float current;
-
-
-					unit_up.normalize();
-					unit_tangent.normalize();
-
-					unit_tangent = unit_tangent * -1.0; ////////
-
-
-					current = unit_up * Vy + unit_tangent * Vx;
-
-					Vector_3_float dir = center + current - viewer;
-
-					//cout << "i am here" << endl;
-
-
-					float origin_x = viewer.get_v1(); /// Точка из которой должен идти луч. dir - Луч
-					float origin_y = viewer.get_v2();
-					float origin_z = viewer.get_v3();
-
-					float dir1 = dir.get_v1();
-					float dir2 = dir.get_v2();
-					float dir3 = dir.get_v3();
-
-					Vector_3_float forward = center - viewer;
-					Vector_3_float variation = forward + unit_up * Vy;
-
-
-
-					if ((forward ^ variation) > (camera.get_angle_of_view() / 2.0))
-					{
-						continue;
-					}
-
-					/*	if (!(L->ray_intersect(origin_x, origin_y, origin_z, dir.get_v1(), dir.get_v2(), dir.get_v3())))
-					{
-						cout << "what" << endl;
-					}*/
-
-
-
-					if (L->ray_intersect(origin_x, origin_y, origin_z, dir.get_v1(), dir.get_v2(), dir.get_v3()))
-					{
-
-
-
-						/*image.draw_point(i, j, randomColor);
-						continue;*/
-
-						Vector_3_float point = L->ret_point(origin_x, origin_y, origin_z, dir.get_v1(), dir.get_v2(), dir.get_v3()); // Точка точно на поверхности
-						Vector_3_float normal_surface = L->ret_normal(point.get_v1(), point.get_v2(), point.get_v3()); //  Вызываю нормаль с точки, которая уже на поверхности
-						Vector_3_float light(lamp.get_x(), lamp.get_y(), lamp.get_z()); // Вектор до света
-						Vector_3_float point_to_lamp = light - point; // Вектор от точки на поверхности до лампы
-						Vector_3_float reflection;
-						Vector_3_float lamp_to_point = point - light;
-						Vector_3_float point_to_camera = viewer - point;
-
-
-						normal_surface.normalize();
-						point_to_lamp.normalize();
-
-
-						unsigned char curcolor[3];
-						curcolor[0] = randomColor[0];
-						curcolor[1] = randomColor[1];
-						curcolor[2] = randomColor[2];
-
-
-						float light_intense = point_to_lamp * normal_surface;
-
-						if (light_intense <= 0)
+						if (screen.get_width() % 2 == 0)
 						{
+							Cx = i - screen.get_width() / 2;
+						}
+
+						if (screen.get_width() % 2 != 0)
+						{
+							Cx = i - (screen.get_width() - 1) / 2;
+						}
+
+						if (screen.get_height() % 2 == 0)
+						{
+							Cy = (screen.get_height() / 2) - j;
+						}
+
+						if (screen.get_height() % 2 != 0)
+						{
+							Cy = ((screen.get_height() - 1) / 2) - j;
+						}
+
+						/*	cout << Cx << endl << Cy << endl;*/
 
 
-							curcolor[0] = (char)0;
-							curcolor[1] = (char)0;
-							curcolor[2] = (char)0;
+							//// Cx, Cy - координаты точки в плоскости экрана, через которую надо пускать луч, которую надо красить
 
-							image.draw_point(i, j, curcolor);
+						float Vx = (float)Cx / (float)screen.get_width(); ///// Объемные координаты точки в плоскости, через которую надо пускать луч, но нету Vz??
+						float Vy = (float)Cy / (float)screen.get_width();
 
+						Vector_3_float unit_up(up.get_v1(), up.get_v2(), up.get_v3());
+						Vector_3_float unit_tangent(tangent.get_v1(), tangent.get_v2(), tangent.get_v3());
+						Vector_3_float current;
+
+
+						unit_up.normalize();
+						unit_tangent.normalize();
+
+						unit_tangent = unit_tangent * -1.0; ////////
+
+
+						current = unit_up * Vy + unit_tangent * Vx;
+
+						Vector_3_float dir = center + current - viewer;
+
+						//cout << "i am here" << endl;
+
+
+						float origin_x = viewer.get_v1(); /// Точка из которой должен идти луч. dir - Луч
+						float origin_y = viewer.get_v2();
+						float origin_z = viewer.get_v3();
+
+						float dir1 = dir.get_v1();
+						float dir2 = dir.get_v2();
+						float dir3 = dir.get_v3();
+
+						Vector_3_float forward = center - viewer;
+						Vector_3_float variation = forward + unit_up * Vy;
+
+
+
+						if ((forward ^ variation) > (camera.get_angle_of_view() / 2.0))
+						{
 							continue;
 						}
 
-						reflection = lamp_to_point - normal_surface * 2 * (lamp_to_point * normal_surface);
-
-						reflection.normalize();
-
-
-
-						float phong_intense;
-						float mirror_coeff = 0.82f;
-						float diffuse_coeff = 0.46f;
-
-						float shine = 0.75;
-
-						float R = (float)randomColor[0] * light_intense;
-						float G = (float)randomColor[1] * light_intense;
-						float B = (float)randomColor[2] * light_intense;
-
-						curcolor[0] = (char)round(R);
-						curcolor[1] = (char)round(G);
-						curcolor[2] = (char)round(B);
-
-						phong_intense = -diffuse_coeff * (normal_surface * lamp_to_point) + mirror_coeff * pow((normal_surface * reflection), shine);
-
-
-						curcolor[0] = curcolor[1] = curcolor[2] = curcolor[0] * light_intense + phong_intense * light_intense;
+						/*	if (!(L->ray_intersect(origin_x, origin_y, origin_z, dir.get_v1(), dir.get_v2(), dir.get_v3())))
+						{
+							cout << "what" << endl;
+						}*/
 
 
 
+						if (L->ray_intersect(origin_x, origin_y, origin_z, dir.get_v1(), dir.get_v2(), dir.get_v3()))
+						{
 
-						image.draw_point(i, j, curcolor);
 
-					}
+
+							/*image.draw_point(i, j, randomColor);
+							continue;*/
+
+							Vector_3_float point = L->ret_point(origin_x, origin_y, origin_z, dir.get_v1(), dir.get_v2(), dir.get_v3()); // Точка точно на поверхности
+							Vector_3_float normal_surface = L->ret_normal(point.get_v1(), point.get_v2(), point.get_v3()); //  Вызываю нормаль с точки, которая уже на поверхности
+							Vector_3_float light(lamp.get_x(), lamp.get_y(), lamp.get_z()); // Вектор до света
+							Vector_3_float point_to_lamp = light - point; // Вектор от точки на поверхности до лампы
+							Vector_3_float reflection;
+							Vector_3_float lamp_to_point = point - light;
+							Vector_3_float point_to_camera = viewer - point;
+
+
+							
+
+
+							normal_surface.normalize();
+							point_to_lamp.normalize();
+
+
+							/*cout << point_to_lamp.get_v1() << endl;
+							cout << point_to_lamp.get_v2() << endl;
+							cout << point_to_lamp.get_v3() << endl;*/
+
+
+							unsigned char curcolor[3];
+							curcolor[0] = randomColor[0];
+							curcolor[1] = randomColor[1];
+							curcolor[2] = randomColor[2];
+
+
+							float light_intense = point_to_lamp.D_product(normal_surface);
+
+						/*	cout << light_intense << endl;*/
+
+							if (light_intense <= 0)
+							{
+
+
+								curcolor[0] = (char)0;
+								curcolor[1] = (char)0;
+								curcolor[2] = (char)0;
+
+								image.draw_point(i, j, curcolor);
+
+								continue;
+							}
+
+							/*reflection = lamp_to_point - normal_surface * 2 * (lamp_to_point.D_product(normal_surface));
+
+							reflection.normalize();
+
+
+
+							float phong_intense;
+							float mirror_coeff = 0.82f;
+							float diffuse_coeff = 0.46f;
+
+							float shine = 0.75;*/
+
+							
+
+							curcolor[0] = curcolor[1] = curcolor[2] = curcolor[0] * light_intense;
+
+							/*phong_intense = -diffuse_coeff * (normal_surface.D_product( lamp_to_point)) + mirror_coeff * pow((normal_surface.D_product(reflection)), shine);*/
+
+
+					
+
+
+
+
+							image.draw_point(i, j, curcolor);
+
+						}
+					/*}*/
+					
+					
 					
 						
 					
