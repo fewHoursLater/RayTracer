@@ -16,15 +16,46 @@
 
 
 #define Pi 3.1415926535f;
+
 constexpr float BIAS = 1e-8f;
-constexpr float epsi = 1e-5f;
+constexpr float epsi = 1e-8f;
 
 
 bool is_equal(float, float);
 
-bool is_equal(float left, float right)
+bool is_equal(float left, float right) // if(left == right)
 {
-	return fabs(left - right) <= epsi;
+	return fabs(left - right) < epsi;
+}
+
+
+
+
+
+bool Less(double left, double right, bool orequal = false) // Новое меньше if(left < right) ************ -> Добавить true в параметры: if(left<=right)
+{
+
+	if (fabs(left - right) < epsi)
+	{
+		return (orequal);
+	}
+
+	return (left < right);
+
+}
+
+
+
+bool Greater(double left, double right, bool orequal = false) // if(left > right) ****************** -> Добавить true в параметры: if(left>=right)
+{
+
+	if (fabs(left - right) < epsi)
+	{
+		return (orequal);
+	}
+
+	return (left > right);
+
 }
 
 using namespace cimg_library;
@@ -41,7 +72,6 @@ public:
 
 	Vector_3_float operator+(const Vector_3_float&);
 	Vector_3_float operator-(const Vector_3_float&);
-	/*float operator*(const Vector_3_float&);*/
 	Vector_3_float operator*(const float&);
 	float operator^(const Vector_3_float&);
 
@@ -104,13 +134,6 @@ Vector_3_float Vector_3_float::operator-(const Vector_3_float& other)
 	Vector_3_float rez(this->vec1_ - other.vec1_, this->vec2_ - other.vec2_, this->vec3_ - other.vec3_);
 	return rez;
 }
-
-//float Vector_3_float::operator*(const Vector_3_float& other)
-//{
-//	float dot_product = this->vec1_ * other.vec1_ + this->vec2_ * other.vec2_ + this->vec3_ * other.vec3_;
-//
-//	return dot_product;
-//}
 
 Vector_3_float Vector_3_float::operator*(const float& value)
 {
@@ -306,12 +329,12 @@ bool Sphere::ray_intersect(const float origin_x, const float origin_y, const flo
 
 	
 
-	if (D < 0)
+	if (Less(D,0.0f))
 	{
 		return false;
 	}
 
-	if (a == 0)
+	if (is_equal(a,0.0f))
 	{
 		cout << "OOps" << endl;
 	}
@@ -319,14 +342,14 @@ bool Sphere::ray_intersect(const float origin_x, const float origin_y, const flo
 	float t = (-b - sqrtf(D)) / (2.0f * a);
 
 
-	if (D >= 0)
+	if (Greater(D,0.0f) || is_equal(D,0.0))
 	{
-		if (t > 0)
+		if (Greater(t,0.0f))
 		{
 			return true;
 		}
 
-		if (t < 0)
+		if (Less(t,0.0f))
 		{
 			return false;
 		}
@@ -409,7 +432,7 @@ Box::Box()
 Box::Box(const float x1, const float y1, const float z1, const float x2, const float y2, const float z2)
 {
 
-	if (x2 - x1 <= 0 || y2 - y1 <= 0 || z2 - z1 <= 0)
+	if (Less(x2 - x1,0.0f) || Less(y2 - y1,0.0f) || Less(z2 - z1,0.0f) || is_equal(x2-x1,0.0f) || is_equal(y2-y1,0.0f) || is_equal(z2-z1,0.0f))
 	{
 		throw std::runtime_error("Failed to create box.\n");
 	}
@@ -430,15 +453,13 @@ Box::~Box()
 bool Box::ray_intersect(const float origin_x, const float origin_y, const float origin_z, const float dir_x, const float dir_y, const float dir_z)
 {
 
-
-
 	if (!is_equal(dir_x,0.0) && !is_equal(dir_y,0.0) && !is_equal(dir_z,0.0))
 	{
 		float t1 = (begin.get_v1() - origin_x) / dir_x;
 		float Y1 = origin_y + dir_y * t1;
 		float Z1 = origin_z + dir_z * t1;
 
-		if (t1 > 0 && begin.get_v2() <= Y1 && Y1 <= end.get_v2() && begin.get_v3() <= Z1 && Z1 <= end.get_v3())
+		if (Greater(t1,0.0f) && Less(begin.get_v2(), Y1, true) && Less(Y1, end.get_v2(), true) && Less(begin.get_v3(), Z1, true) && Less(Z1, end.get_v3(), true))
 		{
 
 			return true;
@@ -448,7 +469,7 @@ bool Box::ray_intersect(const float origin_x, const float origin_y, const float 
 		float X2 = origin_x + dir_x * t2;
 		float Z2 = origin_z + dir_z * t2;
 
-		if (t2 > 0 && begin.get_v1() <= X2 && X2 <= end.get_v1() && begin.get_v3() <= Z2 && Z2 <= end.get_v3())
+		if (Greater(t2, 0.0f) && Less(begin.get_v1(), X2, true) && Less(X2, end.get_v1(), true) && Less(begin.get_v3(), Z2, true) && Less(Z2, end.get_v3(), true))
 		{
 			return true;
 		}
@@ -457,7 +478,7 @@ bool Box::ray_intersect(const float origin_x, const float origin_y, const float 
 		float X3 = origin_x + dir_x * t3;
 		float Y3 = origin_y + dir_y * t3;
 
-		if (t3 > 0 && begin.get_v1() <= X3 && X3 <= end.get_v1() && begin.get_v2() <= Y3 && Y3 <= end.get_v2())
+		if (Greater(t3, 0.0f) && Less(begin.get_v1(), X3, true) && Less(X3, end.get_v1(), true) && Less(begin.get_v2(), Y3, true) && Less(Y3, end.get_v2(), true))
 		{
 
 			return true;
@@ -467,7 +488,7 @@ bool Box::ray_intersect(const float origin_x, const float origin_y, const float 
 		float Y4 = origin_y + dir_y * t4;
 		float Z4 = origin_z + dir_z * t4;
 
-		if (t4 > 0 && begin.get_v2() <= Y4 && Y4 <= end.get_v2() && begin.get_v3() <= Z4 && Z4 <= end.get_v3())
+		if (Greater(t4, 0.0f) && Less(begin.get_v2(), Y4, true) && Less(Y4, end.get_v2(), true) && Less(begin.get_v3(), Z4, true) && Less(Z4, end.get_v3(), true))
 		{
 
 			return true;
@@ -477,7 +498,7 @@ bool Box::ray_intersect(const float origin_x, const float origin_y, const float 
 		float X5 = origin_x + dir_x * t5;
 		float Z5 = origin_z + dir_z * t5;
 
-		if (t5 > 0 && begin.get_v1() <= X5 && X5 <= end.get_v1() && begin.get_v3() <= Z5 && Z5 <= end.get_v3())
+		if (Greater(t5, 0.0f) && Less(begin.get_v1(), X5, true) && Less(X5, end.get_v1(), true) && Less(begin.get_v3(), Z5, true) && Less(Z5, end.get_v3(), true))
 		{
 
 			return true;
@@ -487,24 +508,23 @@ bool Box::ray_intersect(const float origin_x, const float origin_y, const float 
 		float X6 = origin_x + dir_x * t6;
 		float Y6 = origin_y + dir_y * t6;
 
-		if (t6 > 0 && begin.get_v1() <= X6 && X6 <= end.get_v1() && begin.get_v2() <= Y6 && Y6 <= end.get_v2())
+		if (Greater(t6, 0.0f) && Less(begin.get_v1(), X6, true) && Less(X6, end.get_v1(), true) && Less(begin.get_v2(), Y6, true) && Less(Y6, end.get_v2(), true))
 		{
 
 			return true;
 		}
 
 	}
-
-	if (dir_x == 0 && dir_y != 0 && dir_z != 0)
+	if (is_equal(dir_x, 0.0f) && !is_equal(dir_y, 0.0f) && !is_equal(dir_z, 0.0f))
 	{
-		if (begin.get_v1() <= origin_x && origin_x <= end.get_v1())
+		if (Less(begin.get_v1(), origin_x, true) && Less(origin_x, begin.get_v1(), true))
 		{
 
 
 			float t7 = (begin.get_v2() - origin_y) / dir_y;
 			float Z7 = origin_z + dir_z * t7;
 
-			if (t7 > 0 && begin.get_v3() <= Z7 && Z7 <= end.get_v3())
+			if (Greater(t7, 0.0f) && Less(begin.get_v3(), Z7, true) && Less(Z7, end.get_v3(), true))
 			{
 
 				return true;
@@ -513,7 +533,7 @@ bool Box::ray_intersect(const float origin_x, const float origin_y, const float 
 			float t8 = (end.get_v2() - origin_y) / dir_y;
 			float Z8 = origin_z + dir_z * t8;
 
-			if (t8 > 0 && begin.get_v3() <= Z8 && Z8 <= end.get_v3())
+			if (Greater(t8, 0.0f) && Less(begin.get_v3(), Z8, true) && Less(Z8, end.get_v3(), true))
 			{
 
 				return true;
@@ -522,7 +542,7 @@ bool Box::ray_intersect(const float origin_x, const float origin_y, const float 
 			float t9 = (begin.get_v3() - origin_z) / dir_z;
 			float Y9 = origin_y + dir_y * t9;
 
-			if (t9 > 0 && begin.get_v2() <= Y9 && Y9 <= end.get_v2())
+			if (Greater(t9, 0.0f) && Less(begin.get_v2(), Y9, true) && Less(Y9, end.get_v2(), true))
 			{
 
 				return true;
@@ -532,7 +552,7 @@ bool Box::ray_intersect(const float origin_x, const float origin_y, const float 
 			float t10 = (end.get_v3() - origin_z) / dir_z;
 			float Y10 = origin_y + dir_y * t10;
 
-			if (t10 > 0 && begin.get_v2() <= Y10 && Y10 <= end.get_v2())
+			if (Greater(t10, 0.0f) && Less(begin.get_v2(), Y10, true) && Less(Y10, end.get_v2(), true))
 			{
 
 				return true;
@@ -541,16 +561,15 @@ bool Box::ray_intersect(const float origin_x, const float origin_y, const float 
 
 		}
 	}
-
-	if (dir_y == 0 && dir_x != 0 && dir_z != 0)
+	if (is_equal(dir_y, 0.0f) && !is_equal(dir_x, 0.0f) && !is_equal(dir_z, 0.0f))
 	{
-		if (begin.get_v2() <= origin_y && origin_y <= end.get_v2())
+		if (Less(begin.get_v2(), origin_y, true) && Less(origin_y, begin.get_v2(), true))
 		{
 
 			float t11 = (begin.get_v1() - origin_x) / dir_x;
 			float Z11 = origin_z + dir_z * t11;
 
-			if (t11 > 0 && begin.get_v3() <= Z11 && Z11 <= end.get_v3())
+			if (Greater(t11, 0.0f) && Less(begin.get_v3(), Z11, true) && Less(Z11, end.get_v3(), true))
 			{
 
 				return true;
@@ -560,7 +579,7 @@ bool Box::ray_intersect(const float origin_x, const float origin_y, const float 
 			float t12 = (end.get_v1() - origin_x) / dir_x;
 			float Z12 = origin_z + dir_z * t12;
 
-			if (t12 > 0 && begin.get_v3() <= Z12 && Z12 <= end.get_v3())
+			if (Greater(t12, 0.0f) && Less(begin.get_v3(), Z12, true) && Less(Z12, end.get_v3(), true))
 			{
 
 				return true;
@@ -570,7 +589,7 @@ bool Box::ray_intersect(const float origin_x, const float origin_y, const float 
 			float t13 = (begin.get_v3() - origin_z) / dir_z;
 			float X13 = origin_x + dir_x * t13;
 
-			if (t13 > 0 && begin.get_v1() <= X13 && X13 <= end.get_v1())
+			if (Greater(t13, 0.0f) && Less(begin.get_v1(), X13, true) && Less(X13, end.get_v1(), true))
 			{
 
 				return true;
@@ -580,24 +599,23 @@ bool Box::ray_intersect(const float origin_x, const float origin_y, const float 
 			float t14 = (end.get_v3() - origin_z) / dir_z;
 			float X14 = origin_x + dir_x * t14;
 
-			if (t14 > 0 && begin.get_v1() <= X14 && X14 <= end.get_v1())
+			if (Greater(t14, 0.0f) && Less(begin.get_v1(), X14, true) && Less(X14, end.get_v1(), true))
 			{
 
 				return true;
 			}
 		}
 	}
-
-	if (dir_z == 0 && dir_x != 0 && dir_y != 0)
+	if (is_equal(dir_z, 0.0f) && !is_equal(dir_x, 0.0f) && !is_equal(dir_y, 0.0f))
 	{
 
-		if (begin.get_v3() <= origin_z && origin_z <= end.get_v3())
+		if (Less(begin.get_v3(), origin_z, true) && Less(origin_z, begin.get_v3(), true))
 		{
 
 			float t15 = (begin.get_v1() - origin_x) / dir_x;
 			float Y15 = origin_y + dir_y * t15;
 
-			if (t15 > 0 && begin.get_v2() <= Y15 && Y15 <= end.get_v2())
+			if (Greater(t15, 0.0f) && Less(begin.get_v2(), Y15, true) && Less(Y15, end.get_v2(), true))
 			{
 				return true;
 			}
@@ -606,7 +624,7 @@ bool Box::ray_intersect(const float origin_x, const float origin_y, const float 
 			float t16 = (end.get_v1() - origin_x) / dir_x;
 			float Y16 = origin_y + dir_y * t16;
 
-			if (t16 > 0 && begin.get_v2() <= Y16 && Y16 <= end.get_v2())
+			if (Greater(t16, 0.0f) && Less(begin.get_v2(), Y16, true) && Less(Y16, end.get_v2(), true))
 			{
 
 				return true;
@@ -616,7 +634,7 @@ bool Box::ray_intersect(const float origin_x, const float origin_y, const float 
 			float t17 = (begin.get_v2() - origin_y) / dir_y;
 			float X17 = origin_x + dir_x * t17;
 
-			if (t17 > 0 && begin.get_v1() <= X17 && X17 <= end.get_v1())
+			if (Greater(t17, 0.0f) && Less(begin.get_v1(), X17, true) && Less(X17, end.get_v1(), true))
 			{
 
 				return true;
@@ -625,7 +643,7 @@ bool Box::ray_intersect(const float origin_x, const float origin_y, const float 
 			float t18 = (end.get_v2() - origin_y) / dir_y;
 			float X18 = origin_x + dir_x * t18;
 
-			if (t18 > 0 && begin.get_v1() <= X18 && X18 <= end.get_v1())
+			if (Greater(t18, 0.0f) && Less(begin.get_v1(), X18, true) && Less(X18, end.get_v1(), true))
 			{
 
 				return true;
@@ -634,15 +652,14 @@ bool Box::ray_intersect(const float origin_x, const float origin_y, const float 
 		}
 
 	}
-
-	if (dir_x == 0 && dir_y == 0 && dir_z != 0)
+	if (is_equal(dir_x, 0.0f) && is_equal(dir_y, 0.0f) && !is_equal(dir_z, 0.0f))
 	{
-		if (begin.get_v1() <= origin_x && origin_x <= end.get_v1() && begin.get_v2() <= origin_y && origin_y <= end.get_v2())
+		if (Less(begin.get_v1(), origin_x, true) && Less(origin_x, begin.get_v1(), true) && Less(begin.get_v2(), origin_y, true) && Less(origin_y, begin.get_v2(), true))
 		{
 
 			float t19 = (begin.get_v3() - origin_z) / dir_z;
 
-			if (t19 > 0)
+			if (Greater(t19, 0.0f))
 			{
 
 				return true;
@@ -650,7 +667,7 @@ bool Box::ray_intersect(const float origin_x, const float origin_y, const float 
 
 			float t20 = (end.get_v3() - origin_z) / dir_z;
 
-			if (t20 > 0)
+			if (Greater(t20, 0.0f))
 			{
 
 				return true;
@@ -659,14 +676,13 @@ bool Box::ray_intersect(const float origin_x, const float origin_y, const float 
 
 		}
 	}
-
-	if (dir_y == 0 && dir_z == 0 && dir_x != 0)
+	if (is_equal(dir_y, 0.0f) && is_equal(dir_z, 0.0f) && !is_equal(dir_x, 0.0f))
 	{
-		if (begin.get_v2() <= origin_y && origin_y <= end.get_v2() && begin.get_v3() <= origin_z && origin_z <= end.get_v3())
+		if (Less(begin.get_v2(), origin_y, true) && Less(origin_y, begin.get_v2(), true) && Less(begin.get_v3(), origin_z, true) && Less(origin_z, begin.get_v3(), true))
 		{
 			float t21 = (begin.get_v1() - origin_x) / dir_x;
 
-			if (t21 > 0)
+			if (Greater(t21, 0.0f))
 			{
 
 				return true;
@@ -674,7 +690,7 @@ bool Box::ray_intersect(const float origin_x, const float origin_y, const float 
 
 			float t22 = (end.get_v1() - origin_x) / dir_x;
 
-			if (t22 > 0)
+			if (Greater(t22, 0.0f))
 			{
 
 				return true;
@@ -683,14 +699,13 @@ bool Box::ray_intersect(const float origin_x, const float origin_y, const float 
 		}
 
 	}
-
-	if (dir_x == 0 && dir_z == 0 && dir_y != 0)
+	if (is_equal(dir_x, 0.0f) && is_equal(dir_z, 0.0f) && !is_equal(dir_y, 0.0f))
 	{
-		if (begin.get_v1() <= origin_x && origin_x <= end.get_v1() && begin.get_v3() <= origin_z && origin_z <= end.get_v3())
+		if (Less(begin.get_v1(), origin_x, true) && Less(origin_x, begin.get_v1(), true) && Less(begin.get_v3(), origin_z, true) && Less(origin_z, begin.get_v3(), true))
 		{
 			float t23 = (begin.get_v2() - origin_y) / dir_y;
 
-			if (t23 > 0)
+			if (Greater(t23, 0.0f))
 			{
 
 				return true;
@@ -698,7 +713,7 @@ bool Box::ray_intersect(const float origin_x, const float origin_y, const float 
 
 			float t24 = (end.get_v2() - origin_y) / dir_y;
 
-			if (t24 > 0)
+			if (Greater(t24, 0.0f))
 			{
 
 				return true;
@@ -710,20 +725,30 @@ bool Box::ray_intersect(const float origin_x, const float origin_y, const float 
 
 }
 
+
+	/// Less(begin.get_v1(), X, true) && Less(X, end.get_v1(), true)
+	/// Less(begin.get_v2(), Y, true) && Less(Y, end.get_v2(), true)
+	/// Less(begin.get_v3(), Z, true) && Less(Z, end.get_v3(), true)
+	/// 
+	/// 
+	/// Less(begin.get_v1(),origin_x,true) && Less(origin_x, begin.get_v1(), true)
+	/// Less(begin.get_v2(),origin_y,true) && Less(origin_y, begin.get_v2(), true)
+	/// Less(begin.get_v3(),origin_z,true) && Less(origin_z, begin.get_v3(), true)
+
 Vector_3_float Box::ret_point(const float origin_x, const float origin_y, const float origin_z, const float dir_x, const float dir_y, const float dir_z)
 {
 
-
 	vector<float> parameters;
 
-	if (dir_x != 0 && dir_y != 0 && dir_z != 0)
+	if (!is_equal(dir_x, 0.0) && !is_equal(dir_y, 0.0) && !is_equal(dir_z, 0.0))
 	{
 		float t1 = (begin.get_v1() - origin_x) / dir_x;
 		float Y1 = origin_y + dir_y * t1;
 		float Z1 = origin_z + dir_z * t1;
 
-		if (t1 > 0 && begin.get_v2() <= Y1 && Y1 <= end.get_v2() && begin.get_v3() <= Z1 && Z1 <= end.get_v3())
+		if (Greater(t1, 0.0f) && Less(begin.get_v2(), Y1, true) && Less(Y1, end.get_v2(), true) && Less(begin.get_v3(), Z1, true) && Less(Z1, end.get_v3(), true))
 		{
+
 			parameters.push_back(t1);
 		}
 
@@ -731,7 +756,7 @@ Vector_3_float Box::ret_point(const float origin_x, const float origin_y, const 
 		float X2 = origin_x + dir_x * t2;
 		float Z2 = origin_z + dir_z * t2;
 
-		if (t2 > 0 && begin.get_v1() <= X2 && X2 <= end.get_v1() && begin.get_v3() <= Z2 && Z2 <= end.get_v3())
+		if (Greater(t2, 0.0f) && Less(begin.get_v1(), X2, true) && Less(X2, end.get_v1(), true) && Less(begin.get_v3(), Z2, true) && Less(Z2, end.get_v3(), true))
 		{
 			parameters.push_back(t2);
 		}
@@ -740,8 +765,9 @@ Vector_3_float Box::ret_point(const float origin_x, const float origin_y, const 
 		float X3 = origin_x + dir_x * t3;
 		float Y3 = origin_y + dir_y * t3;
 
-		if (t3 > 0 && begin.get_v1() <= X3 && X3 <= end.get_v1() && begin.get_v2() <= Y3 && Y3 <= end.get_v2())
+		if (Greater(t3, 0.0f) && Less(begin.get_v1(), X3, true) && Less(X3, end.get_v1(), true) && Less(begin.get_v2(), Y3, true) && Less(Y3, end.get_v2(), true))
 		{
+
 			parameters.push_back(t3);
 		}
 
@@ -749,8 +775,9 @@ Vector_3_float Box::ret_point(const float origin_x, const float origin_y, const 
 		float Y4 = origin_y + dir_y * t4;
 		float Z4 = origin_z + dir_z * t4;
 
-		if (t4 > 0 && begin.get_v2() <= Y4 && Y4 <= end.get_v2() && begin.get_v3() <= Z4 && Z4 <= end.get_v3())
+		if (Greater(t4, 0.0f) && Less(begin.get_v2(), Y4, true) && Less(Y4, end.get_v2(), true) && Less(begin.get_v3(), Z4, true) && Less(Z4, end.get_v3(), true))
 		{
+
 			parameters.push_back(t4);
 		}
 
@@ -758,8 +785,9 @@ Vector_3_float Box::ret_point(const float origin_x, const float origin_y, const 
 		float X5 = origin_x + dir_x * t5;
 		float Z5 = origin_z + dir_z * t5;
 
-		if (t5 > 0 && begin.get_v1() <= X5 && X5 <= end.get_v1() && begin.get_v3() <= Z5 && Z5 <= end.get_v3())
+		if (Greater(t5, 0.0f) && Less(begin.get_v1(), X5, true) && Less(X5, end.get_v1(), true) && Less(begin.get_v3(), Z5, true) && Less(Z5, end.get_v3(), true))
 		{
+
 			parameters.push_back(t5);
 		}
 
@@ -767,40 +795,43 @@ Vector_3_float Box::ret_point(const float origin_x, const float origin_y, const 
 		float X6 = origin_x + dir_x * t6;
 		float Y6 = origin_y + dir_y * t6;
 
-		if (t6 > 0 && begin.get_v1() <= X6 && X6 <= end.get_v1() && begin.get_v2() <= Y6 && Y6 <= end.get_v2())
+		if (Greater(t6, 0.0f) && Less(begin.get_v1(), X6, true) && Less(X6, end.get_v1(), true) && Less(begin.get_v2(), Y6, true) && Less(Y6, end.get_v2(), true))
 		{
+
 			parameters.push_back(t6);
 		}
 
 	}
-
-	if (is_equal(dir_x,0.0) && !is_equal(dir_y,0.0) && !is_equal(dir_z,0.0))
+	if (is_equal(dir_x, 0.0f) && !is_equal(dir_y, 0.0f) && !is_equal(dir_z, 0.0f))
 	{
-		if (begin.get_v1() <= origin_x && origin_x <= end.get_v1())
+		if (Less(begin.get_v1(), origin_x, true) && Less(origin_x, begin.get_v1(), true))
 		{
 
 
 			float t7 = (begin.get_v2() - origin_y) / dir_y;
 			float Z7 = origin_z + dir_z * t7;
 
-			if (t7 > 0 && begin.get_v3() <= Z7 && Z7 <= end.get_v3())
+			if (Greater(t7, 0.0f) && Less(begin.get_v3(), Z7, true) && Less(Z7, end.get_v3(), true))
 			{
+
 				parameters.push_back(t7);
 			}
 
 			float t8 = (end.get_v2() - origin_y) / dir_y;
 			float Z8 = origin_z + dir_z * t8;
 
-			if (t8 > 0 && begin.get_v3() <= Z8 && Z8 <= end.get_v3())
+			if (Greater(t8, 0.0f) && Less(begin.get_v3(), Z8, true) && Less(Z8, end.get_v3(), true))
 			{
+
 				parameters.push_back(t8);
 			}
 
 			float t9 = (begin.get_v3() - origin_z) / dir_z;
 			float Y9 = origin_y + dir_y * t9;
 
-			if (t9 > 0 && begin.get_v2() <= Y9 && Y9 <= end.get_v2())
+			if (Greater(t9, 0.0f) && Less(begin.get_v2(), Y9, true) && Less(Y9, end.get_v2(), true))
 			{
+
 				parameters.push_back(t9);
 
 			}
@@ -808,25 +839,26 @@ Vector_3_float Box::ret_point(const float origin_x, const float origin_y, const 
 			float t10 = (end.get_v3() - origin_z) / dir_z;
 			float Y10 = origin_y + dir_y * t10;
 
-			if (t10 > 0 && begin.get_v2() <= Y10 && Y10 <= end.get_v2())
+			if (Greater(t10, 0.0f) && Less(begin.get_v2(), Y10, true) && Less(Y10, end.get_v2(), true))
 			{
+
 				parameters.push_back(t10);
 
 			}
 
 		}
 	}
-
-	if (dir_y == 0 && dir_x != 0 && dir_z != 0)
+	if (is_equal(dir_y, 0.0f) && !is_equal(dir_x, 0.0f) && !is_equal(dir_z, 0.0f))
 	{
-		if (begin.get_v2() <= origin_y && origin_y <= end.get_v2())
+		if (Less(begin.get_v2(), origin_y, true) && Less(origin_y, begin.get_v2(), true))
 		{
 
 			float t11 = (begin.get_v1() - origin_x) / dir_x;
 			float Z11 = origin_z + dir_z * t11;
 
-			if (t11 > 0 && begin.get_v3() <= Z11 && Z11 <= end.get_v3())
+			if (Greater(t11, 0.0f) && Less(begin.get_v3(), Z11, true) && Less(Z11, end.get_v3(), true))
 			{
+
 				parameters.push_back(t11);
 			}
 
@@ -834,8 +866,9 @@ Vector_3_float Box::ret_point(const float origin_x, const float origin_y, const 
 			float t12 = (end.get_v1() - origin_x) / dir_x;
 			float Z12 = origin_z + dir_z * t12;
 
-			if (t12 > 0 && begin.get_v3() <= Z12 && Z12 <= end.get_v3())
+			if (Greater(t12, 0.0f) && Less(begin.get_v3(), Z12, true) && Less(Z12, end.get_v3(), true))
 			{
+
 				parameters.push_back(t12);
 			}
 
@@ -843,8 +876,9 @@ Vector_3_float Box::ret_point(const float origin_x, const float origin_y, const 
 			float t13 = (begin.get_v3() - origin_z) / dir_z;
 			float X13 = origin_x + dir_x * t13;
 
-			if (t13 > 0 && begin.get_v1() <= X13 && X13 <= end.get_v1())
+			if (Greater(t13, 0.0f) && Less(begin.get_v1(), X13, true) && Less(X13, end.get_v1(), true))
 			{
+
 				parameters.push_back(t13);
 			}
 
@@ -852,27 +886,23 @@ Vector_3_float Box::ret_point(const float origin_x, const float origin_y, const 
 			float t14 = (end.get_v3() - origin_z) / dir_z;
 			float X14 = origin_x + dir_x * t14;
 
-			if (t14 > 0 && begin.get_v1() <= X14 && X14 <= end.get_v1())
+			if (Greater(t14, 0.0f) && Less(begin.get_v1(), X14, true) && Less(X14, end.get_v1(), true))
 			{
+
 				parameters.push_back(t14);
 			}
-
-
 		}
-
-
 	}
-
-	if (dir_z == 0 && dir_x != 0 && dir_y != 0)
+	if (is_equal(dir_z, 0.0f) && !is_equal(dir_x, 0.0f) && !is_equal(dir_y, 0.0f))
 	{
 
-		if (begin.get_v3() <= origin_z && origin_z <= end.get_v3())
+		if (Less(begin.get_v3(), origin_z, true) && Less(origin_z, begin.get_v3(), true))
 		{
 
 			float t15 = (begin.get_v1() - origin_x) / dir_x;
 			float Y15 = origin_y + dir_y * t15;
 
-			if (t15 > 0 && begin.get_v2() <= Y15 && Y15 <= end.get_v2())
+			if (Greater(t15, 0.0f) && Less(begin.get_v2(), Y15, true) && Less(Y15, end.get_v2(), true))
 			{
 				parameters.push_back(t15);
 			}
@@ -881,8 +911,9 @@ Vector_3_float Box::ret_point(const float origin_x, const float origin_y, const 
 			float t16 = (end.get_v1() - origin_x) / dir_x;
 			float Y16 = origin_y + dir_y * t16;
 
-			if (t16 > 0 && begin.get_v2() <= Y16 && Y16 <= end.get_v2())
+			if (Greater(t16, 0.0f) && Less(begin.get_v2(), Y16, true) && Less(Y16, end.get_v2(), true))
 			{
+
 				parameters.push_back(t16);
 			}
 
@@ -890,127 +921,110 @@ Vector_3_float Box::ret_point(const float origin_x, const float origin_y, const 
 			float t17 = (begin.get_v2() - origin_y) / dir_y;
 			float X17 = origin_x + dir_x * t17;
 
-			if (t17 > 0 && begin.get_v1() <= X17 && X17 <= end.get_v1())
+			if (Greater(t17, 0.0f) && Less(begin.get_v1(), X17, true) && Less(X17, end.get_v1(), true))
 			{
+
 				parameters.push_back(t17);
 			}
 
 			float t18 = (end.get_v2() - origin_y) / dir_y;
 			float X18 = origin_x + dir_x * t18;
 
-			if (t18 > 0 && begin.get_v1() <= X18 && X18 <= end.get_v1())
+			if (Greater(t18, 0.0f) && Less(begin.get_v1(), X18, true) && Less(X18, end.get_v1(), true))
 			{
+
 				parameters.push_back(t18);
 			}
 
 		}
 
 	}
-
-	if (dir_x == 0 && dir_y == 0 && dir_z != 0)
+	if (is_equal(dir_x, 0.0f) && is_equal(dir_y, 0.0f) && !is_equal(dir_z, 0.0f))
 	{
-		if (begin.get_v1() <= origin_x && origin_x <= end.get_v1() && begin.get_v2() <= origin_y && origin_y <= end.get_v2())
+		if (Less(begin.get_v1(), origin_x, true) && Less(origin_x, begin.get_v1(), true) && Less(begin.get_v2(), origin_y, true) && Less(origin_y, begin.get_v2(), true))
 		{
 
 			float t19 = (begin.get_v3() - origin_z) / dir_z;
 
-			if (t19 > 0)
+			if (Greater(t19, 0.0f))
 			{
+
 				parameters.push_back(t19);
 			}
 
 			float t20 = (end.get_v3() - origin_z) / dir_z;
 
-			if (t20 > 0)
+			if (Greater(t20, 0.0f))
 			{
+
 				parameters.push_back(t20);
 			}
 
 
 		}
 	}
-
-	if (dir_y == 0 && dir_z == 0 && dir_x != 0)
+	if (is_equal(dir_y, 0.0f) && is_equal(dir_z, 0.0f) && !is_equal(dir_x, 0.0f))
 	{
-		if (begin.get_v2() <= origin_y && origin_y <= end.get_v2() && begin.get_v3() <= origin_z && origin_z <= end.get_v3())
+		if (Less(begin.get_v2(), origin_y, true) && Less(origin_y, begin.get_v2(), true) && Less(begin.get_v3(), origin_z, true) && Less(origin_z, begin.get_v3(), true))
 		{
 			float t21 = (begin.get_v1() - origin_x) / dir_x;
 
-			if (t21 > 0)
+			if (Greater(t21, 0.0f))
 			{
+
 				parameters.push_back(t21);
 			}
 
 			float t22 = (end.get_v1() - origin_x) / dir_x;
 
-			if (t22 > 0)
+			if (Greater(t22, 0.0f))
 			{
+
 				parameters.push_back(t22);
 			}
 
 		}
 
 	}
-
-	if (dir_x == 0 && dir_z == 0 && dir_y != 0)
+	if (is_equal(dir_x, 0.0f) && is_equal(dir_z, 0.0f) && !is_equal(dir_y, 0.0f))
 	{
-		if (begin.get_v1() <= origin_x && origin_x <= end.get_v1() && begin.get_v3() <= origin_z && origin_z <= end.get_v3())
+		if (Less(begin.get_v1(), origin_x, true) && Less(origin_x, begin.get_v1(), true) && Less(begin.get_v3(), origin_z, true) && Less(origin_z, begin.get_v3(), true))
 		{
 			float t23 = (begin.get_v2() - origin_y) / dir_y;
 
-			if (t23 > 0)
+			if (Greater(t23, 0.0f))
 			{
+
 				parameters.push_back(t23);
 			}
 
 			float t24 = (end.get_v2() - origin_y) / dir_y;
 
-			if (t24 > 0)
+			if (Greater(t24, 0.0f))
 			{
+
 				parameters.push_back(t24);
 			}
 		}
 	}
 
-
 	float min;
 	min = parameters[0];
 
-	/*cout << parameters.capacity() << endl;
-
-	cout << parameters[0] << endl;
-	cout << parameters[1] << endl;*/
-
-
 	for (auto i : parameters)
 	{
-		if (i < min)
+		if (Less(i, min))
 		{
 			min = i;
 		}
 
 	}
 
-	/*cout << "=====" << endl;
-	cout << min << endl;*/
-
 	Vector_3_float origin(origin_x, origin_y, origin_z);
 	Vector_3_float direction(dir_x, dir_y, dir_z);
 	Vector_3_float point = origin + direction * min;
-	//cout << "=====" << endl;
-	//cout << point.get_v1() << endl;
-	//cout << point.get_v2() << endl;
-	//cout << point.get_v3() << endl;
-	//cout << "=====" << endl;
-
-	//cout << dir_x << endl;
-	//cout << dir_y << endl;
-	//cout << dir_z << endl;
-
-
 
 	return point;
-
 
 }
 
@@ -1025,34 +1039,33 @@ Vector_3_float Box::ret_normal(const float x, const float y, const float z) // Т
 
 	Vector_3_float diagonal = end - begin;
 
-
-	if (fabs(x - begin.get_v1())<epsi)
+	if (is_equal(x,begin.get_v1()))
 	{
 		return n4;
 	}
 
-	if (fabs(x - end.get_v1())< epsi)
+	if (is_equal(x, end.get_v1()))
 	{
 		return n1;
 	}
 
 
-	if (fabs(y -begin.get_v2())< epsi)
+	if (is_equal(y, begin.get_v2()))
 	{
 		return n5;
 	}
 
-	if (fabs(y - end.get_v2())< epsi)
+	if (is_equal(y, end.get_v2()))
 	{
 		return n2;
 	}
 
-	if (fabs(z - begin.get_v3())< epsi)
+	if (is_equal(z, begin.get_v3()))
 	{
 		return n6;
 	}
 
-	if (fabs(z - end.get_v3())< epsi)
+	if (is_equal(z, end.get_v3()))
 	{
 		return n3;
 	}
@@ -1081,7 +1094,6 @@ public:
 	friend float return_param(const float, const float, const float, const float, const float, const float, Vector_3_float, Vector_3_float, Vector_3_float);
 	friend bool check_point(const float, const float, const float, Vector_3_float, Vector_3_float, Vector_3_float);
 
-
 };
 
 
@@ -1089,115 +1101,76 @@ public:
 bool Triangle_intersection(const float origin_x, const float origin_y, const float origin_z, const float dir_x, const float dir_y, const float dir_z, Vector_3_float v0_, Vector_3_float v1_, Vector_3_float v2_)
 {
 
-	Vector_3_float v0 = v0_;
-	Vector_3_float v1 = v1_;
-	Vector_3_float v2 = v2_;
+	Vector_3_float A = v0_;
+	Vector_3_float B = v1_;
+	Vector_3_float C = v2_;
+
 	Vector_3_float direction(dir_x, dir_y, dir_z);
 	Vector_3_float origin(origin_x, origin_y, origin_z);
 
-	Vector_3_float v0v1 = v1 - v0;
-	Vector_3_float v0v2 = v2 - v0;
-	Vector_3_float pvec = direction.V_product(v0v2);
+	Vector_3_float AB = B - A;
+	Vector_3_float AC = C - A;
 
+	Vector_3_float Normal = AB.V_product(AC);
 
-	float det = v0v1.D_product(pvec);
-
-	if (det < BIAS)
+	if (is_equal(direction.D_product(Normal), 0.0f))
 	{
 		return false;
 	}
 
-	if (std::fabs(det) < BIAS)
+	float A_coeff = AB.get_v2() * AC.get_v3() - AB.get_v3() * AC.get_v2();
+	float B_coeff = AB.get_v3() * AC.get_v1() - AB.get_v1() * AC.get_v3();
+	float C_coeff = AB.get_v1() * AC.get_v2() - AB.get_v2() * AC.get_v1();
+	float D_coeff = A.get_v1() * (AB.get_v3() * AC.get_v2() - AB.get_v2() * AC.get_v3()) + A.get_v2() * (AB.get_v1() * AC.get_v3() - AB.get_v3() * AC.get_v1()) + A.get_v3() * (AB.get_v2() * AC.get_v1() - AB.get_v1() * AC.get_v2());
+
+	float t = -(A_coeff * origin_x + B_coeff * origin_y + C_coeff * origin_z + D_coeff) / (direction.get_v1() * A_coeff + direction.get_v2() * B_coeff + direction.get_v3() * C_coeff);
+
+	if (Less(t, 0.0f, true))
 	{
 		return false;
 	}
 
-	float invDet = 1 / det;
+	Vector_3_float point = origin + direction * t;
 
-	Vector_3_float tvec = origin - v0;
+	Vector_3_float from_start_to_point = point - A;
 
-	float u = (tvec.D_product(pvec)) * invDet;
+	float u = from_start_to_point.D_product(AB);
+	float v = from_start_to_point.D_product(AC);
 
-	if (u < 0 || u > 1)
-	{
-		return false;
+	float tmp = u + v;
 
-	}
-
-	Vector_3_float qvec = tvec.V_product(v0v1);
-
-	float v = (direction.D_product(qvec)) * invDet;
-
-	if (v < 0 || u + v > 1)
-	{
-		return false;
-	}
-
-	float t = (v0v2.D_product(qvec)) * invDet;
-
-	if (t > BIAS)
+	if (Less(0.0f, u, true) && Less(u, 1.0f, true) && Less(0.0f, v, true) && Less(v, 1.0f, true) && Less(0.0f, tmp, true) && Less(tmp, 1.0f, true))
 	{
 		return true;
 	}
 
 	return false;
-}
 
+}
 
 float return_param(const float origin_x, const float origin_y, const float origin_z, const float dir_x, const float dir_y, const float dir_z, Vector_3_float v0_, Vector_3_float v1_, Vector_3_float v2_)
 {
-	Vector_3_float v0 = v0_;
-	Vector_3_float v1 = v1_;
-	Vector_3_float v2 = v2_;
+
+	Vector_3_float A = v0_;
+	Vector_3_float B = v1_;
+	Vector_3_float C = v2_;
+
 	Vector_3_float direction(dir_x, dir_y, dir_z);
 	Vector_3_float origin(origin_x, origin_y, origin_z);
 
-	Vector_3_float v0v1 = v1 - v0;
-	Vector_3_float v0v2 = v2 - v0;
-	Vector_3_float pvec = direction.V_product(v0v2);
+	Vector_3_float AB = B - A;
+	Vector_3_float AC = C - A;
 
-	float det = v0v1.D_product(pvec);
-	float invDet = 1 / det;
+	Vector_3_float Normal = AB.V_product(AC);
 
-	Vector_3_float tvec = origin - v0;
-	Vector_3_float qvec = tvec.V_product(v0v1);
+	float A_coeff = AB.get_v2() * AC.get_v3() - AB.get_v3() * AC.get_v2();
+	float B_coeff = AB.get_v3() * AC.get_v1() - AB.get_v1() * AC.get_v3();
+	float C_coeff = AB.get_v1() * AC.get_v2() - AB.get_v2() * AC.get_v1();
+	float D_coeff = A.get_v1() * (AB.get_v3() * AC.get_v2() - AB.get_v2() * AC.get_v3()) + A.get_v2() * (AB.get_v1() * AC.get_v3() - AB.get_v3() * AC.get_v1()) + A.get_v3() * (AB.get_v2() * AC.get_v1() - AB.get_v1() * AC.get_v2());
 
-	float t = (v0v2.D_product(qvec)) * invDet;
+	float t = -(A_coeff * origin_x + B_coeff * origin_y + C_coeff * origin_z + D_coeff) / (direction.get_v1() * A_coeff + direction.get_v2() * B_coeff + direction.get_v3() * C_coeff);
 
 	return t;
-}
-
-bool check_point(const float x_, const float y_, const float z_, Vector_3_float A_, Vector_3_float B_, Vector_3_float C_)
-{
-	Vector_3_float p(x_, y_, z_);
-	Vector_3_float a = A_;
-	Vector_3_float b = B_;
-	Vector_3_float c = C_;
-
-	a = a - p;
-	b = b - p;
-	c = c - p;
-
-	Vector_3_float u = b.V_product(c);
-	Vector_3_float v = c.V_product(a);
-	Vector_3_float w = a.V_product(b);
-
-	if (is_equal(u.magnitude(),0.0) || is_equal(v.magnitude(), 0.0) || is_equal(w.magnitude(), 0.0))
-	{
-		return true;
-	}
-
-	if ((u.D_product(v)) < 0.0)
-	{
-		return false;
-	}
-
-	if ((u.D_product(w)) < 0.0)
-	{
-		return false;
-	}
-
-	return true;
 }
 
 Tetrahedron::Tetrahedron(const float x1, const float y1, const float z1, const float x2, const float y2, const float z2, const float x3, const float y3, const float z3, const float x4, const float y4, const float z4)
@@ -1215,23 +1188,20 @@ Tetrahedron::Tetrahedron(const float x1, const float y1, const float z1, const f
 
 }
 
-
 bool Tetrahedron::ray_intersect(const float origin_x, const float origin_y, const float origin_z, const float dir_x, const float dir_y, const float dir_z)
 {
-
 
 	if (Triangle_intersection(origin_x, origin_y, origin_z, dir_x, dir_y, dir_z, first_vertex, second_vertex, third_vertex))
 	{
 		return true;
 	}
 
-	if (Triangle_intersection(origin_x, origin_y, origin_z, dir_x, dir_y, dir_z, third_vertex, second_vertex, fourth_vertex))
+	if (Triangle_intersection(origin_x, origin_y, origin_z, dir_x, dir_y, dir_z, second_vertex, third_vertex, fourth_vertex))
 	{
 		return true;
 	}
 
-
-	if (Triangle_intersection(origin_x, origin_y, origin_z, dir_x, dir_y, dir_z, fourth_vertex, second_vertex, first_vertex))
+	if (Triangle_intersection(origin_x, origin_y, origin_z, dir_x, dir_y, dir_z, first_vertex, second_vertex, fourth_vertex))
 	{
 		return true;
 	}
@@ -1242,7 +1212,6 @@ bool Tetrahedron::ray_intersect(const float origin_x, const float origin_y, cons
 	}
 
 	return false;
-
 
 }
 
@@ -1255,26 +1224,27 @@ Vector_3_float Tetrahedron::ret_point(const float origin_x, const float origin_y
 
 	vector<float> parameters;
 
+
 	if (Triangle_intersection(origin_x, origin_y, origin_z, dir_x, dir_y, dir_z, first_vertex, second_vertex, third_vertex))
 	{
 		parameters.push_back(return_param(origin_x, origin_y, origin_z, dir_x, dir_y, dir_z, first_vertex, second_vertex, third_vertex));
 	}
 
-	if (Triangle_intersection(origin_x, origin_y, origin_z, dir_x, dir_y, dir_z, third_vertex, second_vertex, fourth_vertex))
+	if (Triangle_intersection(origin_x, origin_y, origin_z, dir_x, dir_y, dir_z, second_vertex, third_vertex, fourth_vertex))
 	{
-		parameters.push_back(return_param(origin_x, origin_y, origin_z, dir_x, dir_y, dir_z, third_vertex, second_vertex, fourth_vertex));
+		parameters.push_back(return_param(origin_x, origin_y, origin_z, dir_x, dir_y, dir_z, second_vertex, third_vertex, fourth_vertex));
 	}
 
-
-	if (Triangle_intersection(origin_x, origin_y, origin_z, dir_x, dir_y, dir_z, fourth_vertex, second_vertex, first_vertex))
+	if (Triangle_intersection(origin_x, origin_y, origin_z, dir_x, dir_y, dir_z, first_vertex, second_vertex, fourth_vertex))
 	{
-		parameters.push_back(return_param(origin_x, origin_y, origin_z, dir_x, dir_y, dir_z, fourth_vertex, second_vertex, first_vertex));
+		parameters.push_back(return_param(origin_x, origin_y, origin_z, dir_x, dir_y, dir_z, first_vertex, second_vertex, fourth_vertex));
 	}
 
 	if (Triangle_intersection(origin_x, origin_y, origin_z, dir_x, dir_y, dir_z, first_vertex, third_vertex, fourth_vertex))
 	{
 		parameters.push_back(return_param(origin_x, origin_y, origin_z, dir_x, dir_y, dir_z, first_vertex, third_vertex, fourth_vertex));
 	}
+
 
 
 	if (parameters.capacity() == 0)
@@ -1286,7 +1256,7 @@ Vector_3_float Tetrahedron::ret_point(const float origin_x, const float origin_y
 
 	for (auto i : parameters)
 	{
-		if (i < min)
+		if (Less(i,min))
 		{
 			min = i;
 		}
@@ -1297,27 +1267,55 @@ Vector_3_float Tetrahedron::ret_point(const float origin_x, const float origin_y
 
 	return point;
 
-
 }
 
 
-Vector_3_float Tetrahedron::ret_normal(const float x, const float y, const float z) // Точка, которая точно лежит на грани тетраэдера, но на какой??
+bool check_point(const float x, const float y, const float z, Vector_3_float v0, Vector_3_float v1, Vector_3_float v2)
+{
+	Vector_3_float point(x, y, z);
+	Vector_3_float PA = v0 - point;
+	Vector_3_float PB = v1 - point;
+	Vector_3_float PC = v2 - point;
+
+	Vector_3_float u = PB.V_product(PC);
+	Vector_3_float v = PC.V_product(PA);
+	Vector_3_float w = PA.V_product(PB);
+
+	if (is_equal(u.magnitude(), 0.0f) || is_equal(v.magnitude(), 0.0f) || is_equal(w.magnitude(), 0.0f))
+	{
+		return true;
+	}
+
+	if (Less(u.D_product(v), 0.0f))
+	{
+		return false;
+	}
+
+	if (Less(u.D_product(w), 0.0f))
+	{
+		return false;
+	}
+
+	// All normals facing the same way, return true
+	return true;
+
+
+}
+
+Vector_3_float Tetrahedron::ret_normal(const float x, const float y, const float z) // Точка, которая точно лежит на грани тетраэдра, но на какой??
 {
 
 	if (check_point(x, y, z, first_vertex, second_vertex, third_vertex))
 	{
 		Vector_3_float u = second_vertex - first_vertex;
 		Vector_3_float v = third_vertex - first_vertex;
-
 		Vector_3_float D = fourth_vertex - first_vertex;
 
-
-
 		Vector_3_float Normal = u.V_product(v);
 
-		if ((Normal.D_product(D)) > 0.0)
+		if (Greater(Normal.D_product(D), 0.0f))
 		{
-			Normal = Normal * -1.0;
+			Normal = Normal * -1.0f;
 			return Normal;
 		}
 
@@ -1325,21 +1323,16 @@ Vector_3_float Tetrahedron::ret_normal(const float x, const float y, const float
 
 	}
 
-	if (check_point(x, y, z, third_vertex, second_vertex, fourth_vertex))
+	if (check_point(x, y, z, second_vertex, third_vertex, fourth_vertex))
 	{
-
-		Vector_3_float u = second_vertex - third_vertex;
-		Vector_3_float v = fourth_vertex - third_vertex;
-
-		Vector_3_float D = first_vertex - third_vertex;
-
-
-
+		Vector_3_float u = third_vertex - second_vertex;
+		Vector_3_float v = fourth_vertex - second_vertex;
+		Vector_3_float D = first_vertex - second_vertex;
 		Vector_3_float Normal = u.V_product(v);
 
-		if ((Normal.D_product(D)) > 0.0)
+		if (Greater(Normal.D_product(D), 0.0f))
 		{
-			Normal = Normal * -1.0;
+			Normal = Normal * -1.0f;
 			return Normal;
 		}
 
@@ -1347,20 +1340,16 @@ Vector_3_float Tetrahedron::ret_normal(const float x, const float y, const float
 	}
 
 
-	if (check_point(x, y, z, fourth_vertex, second_vertex, first_vertex))
+	if (check_point(x, y, z, first_vertex, second_vertex, fourth_vertex))
 	{
-		Vector_3_float u = second_vertex - fourth_vertex;
-		Vector_3_float v = first_vertex - fourth_vertex;
-
-		Vector_3_float D = third_vertex - fourth_vertex;
-
-
-
+		Vector_3_float u = second_vertex - first_vertex;
+		Vector_3_float v = fourth_vertex - first_vertex;
+		Vector_3_float D = third_vertex - first_vertex;
 		Vector_3_float Normal = u.V_product(v);
 
-		if ((Normal.D_product(D)) > 0.0)
+		if (Greater(Normal.D_product(D), 0.0f))
 		{
-			Normal = Normal * -1.0;
+			Normal = Normal * -1.0f;
 			return Normal;
 		}
 
@@ -1372,24 +1361,17 @@ Vector_3_float Tetrahedron::ret_normal(const float x, const float y, const float
 
 		Vector_3_float u = third_vertex - first_vertex;
 		Vector_3_float v = fourth_vertex - first_vertex;
-
 		Vector_3_float D = second_vertex - first_vertex;
-
-
-
 		Vector_3_float Normal = u.V_product(v);
 
-		if ((Normal.D_product(D)) > 0.0)
+		if (Greater(Normal.D_product(D), 0.0f))
 		{
-			Normal = Normal * -1.0;
+			Normal = Normal * -1.0f;
 			return Normal;
 		}
 
 		return Normal;
 	}
-
-
-
 
 }
 
@@ -1425,7 +1407,6 @@ public:
 	float get_x(void);
 	float get_y(void);
 	float get_z(void);
-
 
 	float get_dist_spec_screen(void);
 	float get_dist_spec_scene(void);
@@ -1508,14 +1489,12 @@ private:
 	float y_;
 	float z_;
 
-
 	float normal[3];
 	float up[3];
 	float tangent[3];
 
 	int width_;
 	int height_;
-
 
 public:
 	Screen();
@@ -1536,12 +1515,9 @@ public:
 	void set_width(const int);
 	void set_height(const int);
 
-
-
 	float get_x(void);
 	float get_y(void);
 	float get_z(void);
-
 
 	float get_norm_x(void);
 	float get_norm_y(void);
@@ -1598,11 +1574,9 @@ int Screen::get_height(void)
 
 void Screen::tangent_(void)
 {
-
 	tangent[0] = up[1] * normal[2] - up[2] * normal[1];
 	tangent[1] = up[2] * normal[0] - up[0] * normal[2];
 	tangent[2] = up[0] * normal[1] - up[1] * normal[0];
-
 }
 
 float Screen::get_norm_x(void)
@@ -1728,7 +1702,6 @@ public:
 	void set_y(const float);
 	void set_z(const float);
 
-
 	float get_x();
 	float get_y();
 	float get_z();
@@ -1802,7 +1775,6 @@ int main()
 		{
 			throw std::runtime_error("Failed to open file.\n");
 		}
-
 
 		while (getline(file, cur_string))
 		{
@@ -1999,7 +1971,6 @@ int main()
 
 				shapes.push_back(new Tetrahedron(a1, a2, a3, b1, b2, b3, c1, c2, c3, d1, d2, d3));
 			}
-
 		}
 
 		if (camera.get_dist_spec_scene() <= camera.get_dist_spec_screen())
@@ -2017,10 +1988,7 @@ int main()
 			throw std::runtime_error("Error3.\n");
 		}
 
-
-
 		screen.tangent_();
-
 
 		Vector_3_float normal(screen.get_norm_x(), screen.get_norm_y(), screen.get_norm_z());
 		Vector_3_float up(screen.get_up_x(), screen.get_up_y(), screen.get_up_z());
@@ -2037,20 +2005,15 @@ int main()
 		Vector_3_float center(screen.get_x(), screen.get_y(), screen.get_z());
 		Vector_3_float viewer(camera.get_x(), camera.get_y(), camera.get_z());
 
-		if ((up ^ normal) != 90.0)
+		if (!is_equal(up ^ normal, 90.0f))
 		{
 			throw std::runtime_error("Wrong angle betwen normal and up\n");
 		}
 
 		CImg<unsigned char> image(screen.get_width(), screen.get_height(), 1, 3, 0);
 
-
-
-
 		for (auto L : shapes)
 		{
-
-
 			int randomColor[3];
 
 			int g = rand() % 31 + 1;
@@ -2059,181 +2022,119 @@ int main()
 			randomColor[1] = 8 * g;
 			randomColor[2] = 8 * g;
 
-			//#pragma omp parallel for
+//#pragma omp parallel for
 
 			for (int j = 0; j < screen.get_height(); j++)
 			{
 				for (int i = 0; i < screen.get_width(); i++)
 				{
-						
-					/*if (i == 300 && j == 482)
-					{*/
-						int Cx = 0;
-						int Cy = 0;
+					int Cx = 0;
+					int Cy = 0;
 
-						if (screen.get_width() % 2 == 0)
+					if (screen.get_width() % 2 == 0)
+					{
+						Cx = i - screen.get_width() / 2;
+					}
+
+					if (screen.get_width() % 2 != 0)
+					{
+						Cx = i - (screen.get_width() - 1) / 2;
+					}
+
+					if (screen.get_height() % 2 == 0)
+					{
+						Cy = (screen.get_height() / 2) - j;
+					}
+
+					if (screen.get_height() % 2 != 0)
+					{
+						Cy = ((screen.get_height() - 1) / 2) - j;
+					}
+
+						//// Cx, Cy - координаты точки в плоскости экрана, через которую надо пускать луч, которую надо красить
+
+					float Vx = (float)Cx / (float)screen.get_width(); ///// Объемные координаты точки в плоскости, через которую надо пускать луч, но нету Vz??
+					float Vy = (float)Cy / (float)screen.get_width();
+
+					Vector_3_float unit_up(up.get_v1(), up.get_v2(), up.get_v3());
+					Vector_3_float unit_tangent(tangent.get_v1(), tangent.get_v2(), tangent.get_v3());
+					Vector_3_float current;
+
+					unit_up.normalize();
+					unit_tangent.normalize();
+
+					unit_tangent = unit_tangent * -1.0; ////////
+
+					current = unit_up * Vy + unit_tangent * Vx;
+
+					Vector_3_float dir = center + current - viewer;
+
+					//cout << "i am here" << endl;
+
+					float origin_x = viewer.get_v1(); /// Точка из которой должен идти луч. dir - Луч
+					float origin_y = viewer.get_v2();
+					float origin_z = viewer.get_v3();
+
+					float dir1 = dir.get_v1();
+					float dir2 = dir.get_v2();
+					float dir3 = dir.get_v3();
+
+					Vector_3_float forward = center - viewer;
+					Vector_3_float variation = forward + unit_up * Vy;
+
+					if (Greater(forward ^ variation, (camera.get_angle_of_view() / 2.0f)))
+					{
+						continue;
+					}
+
+					if (L->ray_intersect(origin_x, origin_y, origin_z, dir.get_v1(), dir.get_v2(), dir.get_v3()))
+					{
+						Vector_3_float point = L->ret_point(origin_x, origin_y, origin_z, dir.get_v1(), dir.get_v2(), dir.get_v3()); // Точка точно на поверхности
+						Vector_3_float normal_surface = L->ret_normal(point.get_v1(), point.get_v2(), point.get_v3()); //  Вызываю нормаль с точки, которая уже на поверхности
+						Vector_3_float light(lamp.get_x(), lamp.get_y(), lamp.get_z()); // Вектор до света
+						Vector_3_float point_to_lamp = light - point; // Вектор от точки на поверхности до лампы
+						Vector_3_float reflection;
+						Vector_3_float lamp_to_point = point - light;
+						Vector_3_float point_to_camera = viewer - point;
+
+						normal_surface.normalize();
+						point_to_lamp.normalize();
+
+						unsigned char curcolor[3];
+						curcolor[0] = randomColor[0];
+						curcolor[1] = randomColor[1];
+						curcolor[2] = randomColor[2];
+
+						float light_intense = point_to_lamp.D_product(normal_surface);
+
+						if (light_intense <= 0)
 						{
-							Cx = i - screen.get_width() / 2;
-						}
-
-						if (screen.get_width() % 2 != 0)
-						{
-							Cx = i - (screen.get_width() - 1) / 2;
-						}
-
-						if (screen.get_height() % 2 == 0)
-						{
-							Cy = (screen.get_height() / 2) - j;
-						}
-
-						if (screen.get_height() % 2 != 0)
-						{
-							Cy = ((screen.get_height() - 1) / 2) - j;
-						}
-
-						/*	cout << Cx << endl << Cy << endl;*/
-
-
-							//// Cx, Cy - координаты точки в плоскости экрана, через которую надо пускать луч, которую надо красить
-
-						float Vx = (float)Cx / (float)screen.get_width(); ///// Объемные координаты точки в плоскости, через которую надо пускать луч, но нету Vz??
-						float Vy = (float)Cy / (float)screen.get_width();
-
-						Vector_3_float unit_up(up.get_v1(), up.get_v2(), up.get_v3());
-						Vector_3_float unit_tangent(tangent.get_v1(), tangent.get_v2(), tangent.get_v3());
-						Vector_3_float current;
-
-
-						unit_up.normalize();
-						unit_tangent.normalize();
-
-						unit_tangent = unit_tangent * -1.0; ////////
-
-
-						current = unit_up * Vy + unit_tangent * Vx;
-
-						Vector_3_float dir = center + current - viewer;
-
-						//cout << "i am here" << endl;
-
-
-						float origin_x = viewer.get_v1(); /// Точка из которой должен идти луч. dir - Луч
-						float origin_y = viewer.get_v2();
-						float origin_z = viewer.get_v3();
-
-						float dir1 = dir.get_v1();
-						float dir2 = dir.get_v2();
-						float dir3 = dir.get_v3();
-
-						Vector_3_float forward = center - viewer;
-						Vector_3_float variation = forward + unit_up * Vy;
-
-
-
-						if ((forward ^ variation) > (camera.get_angle_of_view() / 2.0))
-						{
-							continue;
-						}
-
-						/*	if (!(L->ray_intersect(origin_x, origin_y, origin_z, dir.get_v1(), dir.get_v2(), dir.get_v3())))
-						{
-							cout << "what" << endl;
-						}*/
-
-
-
-						if (L->ray_intersect(origin_x, origin_y, origin_z, dir.get_v1(), dir.get_v2(), dir.get_v3()))
-						{
-
-
-
-							/*image.draw_point(i, j, randomColor);
-							continue;*/
-
-							Vector_3_float point = L->ret_point(origin_x, origin_y, origin_z, dir.get_v1(), dir.get_v2(), dir.get_v3()); // Точка точно на поверхности
-							Vector_3_float normal_surface = L->ret_normal(point.get_v1(), point.get_v2(), point.get_v3()); //  Вызываю нормаль с точки, которая уже на поверхности
-							Vector_3_float light(lamp.get_x(), lamp.get_y(), lamp.get_z()); // Вектор до света
-							Vector_3_float point_to_lamp = light - point; // Вектор от точки на поверхности до лампы
-							Vector_3_float reflection;
-							Vector_3_float lamp_to_point = point - light;
-							Vector_3_float point_to_camera = viewer - point;
-
-
-							
-
-
-							normal_surface.normalize();
-							point_to_lamp.normalize();
-
-
-							/*cout << point_to_lamp.get_v1() << endl;
-							cout << point_to_lamp.get_v2() << endl;
-							cout << point_to_lamp.get_v3() << endl;*/
-
-
-							unsigned char curcolor[3];
-							curcolor[0] = randomColor[0];
-							curcolor[1] = randomColor[1];
-							curcolor[2] = randomColor[2];
-
-
-							float light_intense = point_to_lamp.D_product(normal_surface);
-
-						/*	cout << light_intense << endl;*/
-
-							if (light_intense <= 0)
-							{
-
-
-								curcolor[0] = (char)0;
-								curcolor[1] = (char)0;
-								curcolor[2] = (char)0;
-
-								image.draw_point(i, j, curcolor);
-
-								continue;
-							}
-
-							/*reflection = lamp_to_point - normal_surface * 2 * (lamp_to_point.D_product(normal_surface));
-
-							reflection.normalize();
-
-
-
-							float phong_intense;
-							float mirror_coeff = 0.82f;
-							float diffuse_coeff = 0.46f;
-
-							float shine = 0.75;*/
-
-							
-
-							curcolor[0] = curcolor[1] = curcolor[2] = curcolor[0] * light_intense;
-
-							/*phong_intense = -diffuse_coeff * (normal_surface.D_product( lamp_to_point)) + mirror_coeff * pow((normal_surface.D_product(reflection)), shine);*/
-
-
-					
-
-
-
+							curcolor[0] = (char)0;
+							curcolor[1] = (char)0;
+							curcolor[2] = (char)0;
 
 							image.draw_point(i, j, curcolor);
 
+							continue;
 						}
-					/*}*/
-					
-					
-					
-						
-					
 
+						/*reflection = lamp_to_point - normal_surface * 2 * (lamp_to_point.D_product(normal_surface));
 
-					
+						reflection.normalize();
 
+						float phong_intense;
+						float mirror_coeff = 0.82f;
+						float diffuse_coeff = 0.46f;
 
+						float shine = 0.75;*/
 
+						curcolor[0] = curcolor[1] = curcolor[2] = curcolor[0] * light_intense;
 
+						/*phong_intense = -diffuse_coeff * (normal_surface.D_product( lamp_to_point)) + mirror_coeff * pow((normal_surface.D_product(reflection)), shine);*/
+
+						image.draw_point(i, j, curcolor);
+
+					}
 				}
 			}
 		}
