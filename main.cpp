@@ -12,11 +12,11 @@
 #include <cstdlib>
 #include <ctime>
 #include <omp.h>
+#include <map>
 #include "CImg.h"
 
 
-#define Pi 3.1415926535f;
-
+constexpr float Pi = 3.141592f;
 constexpr float BIAS = 1e-8f;
 constexpr float epsi = 1e-8f;
 
@@ -147,7 +147,7 @@ float Vector_3_float::operator^(const Vector_3_float& other)
 {
 	float cos_angle = (this->get_v1() * other.vec1_ + this->get_v2() * other.vec2_ + this->get_v3() * other.vec3_) / (this->magnitude() * (sqrtf(other.vec1_*other.vec1_+other.vec2_*other.vec2_+other.vec3_*other.vec3_)));
 
-	float angle = 180.0f * acos(cos_angle) / Pi;
+	float angle = (180.0f * acos(cos_angle) / Pi);
 
 	return angle;
 
@@ -274,8 +274,6 @@ public:
 
 };
 
-
-
 Sphere::Sphere()
 {
 	x_ = 0.;
@@ -324,10 +322,6 @@ bool Sphere::ray_intersect(const float origin_x, const float origin_y, const flo
 	float c = origin_x * origin_x + origin_y * origin_y + origin_z * origin_z + x_ * x_ + y_ * y_ + z_ * z_ - 2.0 * ((origin_x * x_) + origin_y * y_ + origin_z * z_) - (R_ * R_);
 
 	float D = b * b - 4.0 * a * c;
-
-
-
-	
 
 	if (Less(D,0.0f))
 	{
@@ -1080,6 +1074,8 @@ private:
 	Vector_3_float second_vertex;
 	Vector_3_float third_vertex;
 	Vector_3_float fourth_vertex;
+	Vector_3_float Normal_;
+	Vector_3_float Point_;
 
 public:
 
@@ -1087,91 +1083,15 @@ public:
 	~Tetrahedron();
 
 	bool ray_intersect(const float, const float, const float, const float, const float, const float) override;
+
 	Vector_3_float ret_point(const float, const float, const float, const float, const float, const float) override;
 	Vector_3_float ret_normal(const float, const float, const float) override;
 
 	friend bool Triangle_intersection(const float, const float, const float, const float, const float, const float, Vector_3_float, Vector_3_float, Vector_3_float);
 	friend float return_param(const float, const float, const float, const float, const float, const float, Vector_3_float, Vector_3_float, Vector_3_float);
-	friend bool check_point(const float, const float, const float, Vector_3_float, Vector_3_float, Vector_3_float);
+	
 
 };
-
-
-
-bool Triangle_intersection(const float origin_x, const float origin_y, const float origin_z, const float dir_x, const float dir_y, const float dir_z, Vector_3_float v0_, Vector_3_float v1_, Vector_3_float v2_)
-{
-
-	Vector_3_float A = v0_;
-	Vector_3_float B = v1_;
-	Vector_3_float C = v2_;
-
-	Vector_3_float direction(dir_x, dir_y, dir_z);
-	Vector_3_float origin(origin_x, origin_y, origin_z);
-
-	Vector_3_float AB = B - A;
-	Vector_3_float AC = C - A;
-
-	Vector_3_float Normal = AB.V_product(AC);
-
-	if (is_equal(direction.D_product(Normal), 0.0f))
-	{
-		return false;
-	}
-
-	float A_coeff = AB.get_v2() * AC.get_v3() - AB.get_v3() * AC.get_v2();
-	float B_coeff = AB.get_v3() * AC.get_v1() - AB.get_v1() * AC.get_v3();
-	float C_coeff = AB.get_v1() * AC.get_v2() - AB.get_v2() * AC.get_v1();
-	float D_coeff = A.get_v1() * (AB.get_v3() * AC.get_v2() - AB.get_v2() * AC.get_v3()) + A.get_v2() * (AB.get_v1() * AC.get_v3() - AB.get_v3() * AC.get_v1()) + A.get_v3() * (AB.get_v2() * AC.get_v1() - AB.get_v1() * AC.get_v2());
-
-	float t = -(A_coeff * origin_x + B_coeff * origin_y + C_coeff * origin_z + D_coeff) / (direction.get_v1() * A_coeff + direction.get_v2() * B_coeff + direction.get_v3() * C_coeff);
-
-	if (Less(t, 0.0f, true))
-	{
-		return false;
-	}
-
-	Vector_3_float point = origin + direction * t;
-
-	Vector_3_float from_start_to_point = point - A;
-
-	float u = from_start_to_point.D_product(AB);
-	float v = from_start_to_point.D_product(AC);
-
-	float tmp = u + v;
-
-	if (Less(0.0f, u, true) && Less(u, 1.0f, true) && Less(0.0f, v, true) && Less(v, 1.0f, true) && Less(0.0f, tmp, true) && Less(tmp, 1.0f, true))
-	{
-		return true;
-	}
-
-	return false;
-
-}
-
-float return_param(const float origin_x, const float origin_y, const float origin_z, const float dir_x, const float dir_y, const float dir_z, Vector_3_float v0_, Vector_3_float v1_, Vector_3_float v2_)
-{
-
-	Vector_3_float A = v0_;
-	Vector_3_float B = v1_;
-	Vector_3_float C = v2_;
-
-	Vector_3_float direction(dir_x, dir_y, dir_z);
-	Vector_3_float origin(origin_x, origin_y, origin_z);
-
-	Vector_3_float AB = B - A;
-	Vector_3_float AC = C - A;
-
-	Vector_3_float Normal = AB.V_product(AC);
-
-	float A_coeff = AB.get_v2() * AC.get_v3() - AB.get_v3() * AC.get_v2();
-	float B_coeff = AB.get_v3() * AC.get_v1() - AB.get_v1() * AC.get_v3();
-	float C_coeff = AB.get_v1() * AC.get_v2() - AB.get_v2() * AC.get_v1();
-	float D_coeff = A.get_v1() * (AB.get_v3() * AC.get_v2() - AB.get_v2() * AC.get_v3()) + A.get_v2() * (AB.get_v1() * AC.get_v3() - AB.get_v3() * AC.get_v1()) + A.get_v3() * (AB.get_v2() * AC.get_v1() - AB.get_v1() * AC.get_v2());
-
-	float t = -(A_coeff * origin_x + B_coeff * origin_y + C_coeff * origin_z + D_coeff) / (direction.get_v1() * A_coeff + direction.get_v2() * B_coeff + direction.get_v3() * C_coeff);
-
-	return t;
-}
 
 Tetrahedron::Tetrahedron(const float x1, const float y1, const float z1, const float x2, const float y2, const float z2, const float x3, const float y3, const float z3, const float x4, const float y4, const float z4)
 {
@@ -1180,200 +1100,257 @@ Tetrahedron::Tetrahedron(const float x1, const float y1, const float z1, const f
 	Vector_3_float B(x2, y2, z2);
 	Vector_3_float C(x3, y3, z3);
 	Vector_3_float D(x4, y4, z4);
+	Vector_3_float E(1.0, 0.0, 0.0);
+	Vector_3_float F(1.0, 0.0, 0.0);
+
 
 	first_vertex = A;
 	second_vertex = B;
 	third_vertex = C;
 	fourth_vertex = D;
-
+	Normal_ = E;
+	Point_ = F;
 }
 
-bool Tetrahedron::ray_intersect(const float origin_x, const float origin_y, const float origin_z, const float dir_x, const float dir_y, const float dir_z)
+
+Vector_3_float Tetrahedron::ret_point(const float a, const float b, const float c, const float d, const float e, const float f)
 {
-
-	if (Triangle_intersection(origin_x, origin_y, origin_z, dir_x, dir_y, dir_z, first_vertex, second_vertex, third_vertex))
-	{
-		return true;
-	}
-
-	if (Triangle_intersection(origin_x, origin_y, origin_z, dir_x, dir_y, dir_z, second_vertex, third_vertex, fourth_vertex))
-	{
-		return true;
-	}
-
-	if (Triangle_intersection(origin_x, origin_y, origin_z, dir_x, dir_y, dir_z, first_vertex, second_vertex, fourth_vertex))
-	{
-		return true;
-	}
-
-	if (Triangle_intersection(origin_x, origin_y, origin_z, dir_x, dir_y, dir_z, first_vertex, third_vertex, fourth_vertex))
-	{
-		return true;
-	}
-
-	return false;
-
+	return Point_;
 }
 
-Vector_3_float Tetrahedron::ret_point(const float origin_x, const float origin_y, const float origin_z, const float dir_x, const float dir_y, const float dir_z)
+Vector_3_float Tetrahedron::ret_normal (const float a, const float b, const float c)
+{
+	return Normal_;
+}
+
+
+bool Triangle_intersection(const float origin_x, const float origin_y, const float origin_z, const float dir_x, const float dir_y, const float dir_z, Vector_3_float v0_, Vector_3_float v1_, Vector_3_float v2_)
 {
 
 	Vector_3_float origin(origin_x, origin_y, origin_z);
 	Vector_3_float direction(dir_x, dir_y, dir_z);
-	Vector_3_float point;
 
-	vector<float> parameters;
+	const float EPSILON = 0.0001;
 
+	Vector_3_float vertex0 = v0_;
+	Vector_3_float vertex1 = v1_;
+	Vector_3_float vertex2 = v2_;
+	Vector_3_float edge1, edge2, h, s, q;
 
-	if (Triangle_intersection(origin_x, origin_y, origin_z, dir_x, dir_y, dir_z, first_vertex, second_vertex, third_vertex))
+	float a, f, u, v;
+
+	edge1 = vertex1 - vertex0;
+	edge2 = vertex2 - vertex0;
+
+	h = direction.V_product(edge2);
+	a = edge1.D_product(h);
+
+	if (a > -EPSILON && a < EPSILON)
 	{
-		parameters.push_back(return_param(origin_x, origin_y, origin_z, dir_x, dir_y, dir_z, first_vertex, second_vertex, third_vertex));
+		return false;
 	}
 
-	if (Triangle_intersection(origin_x, origin_y, origin_z, dir_x, dir_y, dir_z, second_vertex, third_vertex, fourth_vertex))
+	f = 1.0 / a;
+	s = origin - vertex0;
+	u = f * s.D_product(h);
+
+	if (u < 0.0 || u > 1.0)
 	{
-		parameters.push_back(return_param(origin_x, origin_y, origin_z, dir_x, dir_y, dir_z, second_vertex, third_vertex, fourth_vertex));
+		return false;
 	}
 
-	if (Triangle_intersection(origin_x, origin_y, origin_z, dir_x, dir_y, dir_z, first_vertex, second_vertex, fourth_vertex))
+	q = s.V_product(edge1);
+	v = f * direction.D_product(q);
+
+	if (v < 0.0 || u + v > 1.0)
 	{
-		parameters.push_back(return_param(origin_x, origin_y, origin_z, dir_x, dir_y, dir_z, first_vertex, second_vertex, fourth_vertex));
+		return false;
 	}
 
-	if (Triangle_intersection(origin_x, origin_y, origin_z, dir_x, dir_y, dir_z, first_vertex, third_vertex, fourth_vertex))
-	{
-		parameters.push_back(return_param(origin_x, origin_y, origin_z, dir_x, dir_y, dir_z, first_vertex, third_vertex, fourth_vertex));
-	}
+	float t = f * edge2.D_product(q);
 
-
-
-	if (parameters.capacity() == 0)
-	{
-		throw std::runtime_error("CERROR\n");
-	}
-
-	float min = parameters[0];
-
-	for (auto i : parameters)
-	{
-		if (Less(i,min))
-		{
-			min = i;
-		}
-
-	}
-
-	point = origin + direction * min;
-
-	return point;
-
-}
-
-
-bool check_point(const float x, const float y, const float z, Vector_3_float v0, Vector_3_float v1, Vector_3_float v2)
-{
-	Vector_3_float point(x, y, z);
-	Vector_3_float PA = v0 - point;
-	Vector_3_float PB = v1 - point;
-	Vector_3_float PC = v2 - point;
-
-	Vector_3_float u = PB.V_product(PC);
-	Vector_3_float v = PC.V_product(PA);
-	Vector_3_float w = PA.V_product(PB);
-
-	if (is_equal(u.magnitude(), 0.0f) || is_equal(v.magnitude(), 0.0f) || is_equal(w.magnitude(), 0.0f))
+	if (t > EPSILON)
 	{
 		return true;
 	}
-
-	if (Less(u.D_product(v), 0.0f))
+	else
 	{
 		return false;
 	}
-
-	if (Less(u.D_product(w), 0.0f))
-	{
-		return false;
-	}
-
-	// All normals facing the same way, return true
-	return true;
-
 
 }
 
-Vector_3_float Tetrahedron::ret_normal(const float x, const float y, const float z) // Точка, которая точно лежит на грани тетраэдра, но на какой??
-{
 
-	if (check_point(x, y, z, first_vertex, second_vertex, third_vertex))
+
+
+float return_param(const float origin_x, const float origin_y, const float origin_z, const float dir_x, const float dir_y, const float dir_z, Vector_3_float v0_, Vector_3_float v1_, Vector_3_float v2_)
+{
+	Vector_3_float origin(origin_x, origin_y, origin_z);
+	Vector_3_float direction(dir_x, dir_y, dir_z);
+
+	const float EPSILON = 0.0001;
+
+	Vector_3_float vertex0 = v0_;
+	Vector_3_float vertex1 = v1_;
+	Vector_3_float vertex2 = v2_;
+
+	Vector_3_float edge1, edge2, h, s, q;
+
+	float a, f, u, v;
+
+	edge1 = vertex1 - vertex0;
+	edge2 = vertex2 - vertex0;
+
+	h = direction.V_product(edge2);
+	a = edge1.D_product(h);
+
+	if (a > -EPSILON && a < EPSILON)
 	{
+		throw std::runtime_error("Failed \n");
+	}
+
+	f = 1.0 / a;
+	s = origin - vertex0;
+	u = f * s.D_product(h);
+
+	if (u < 0.0 || u > 1.0)
+	{
+		throw std::runtime_error("Failed.\n");
+	}
+
+	q = s.V_product(edge1);
+	v = f * direction.D_product(q);
+
+	if (v < 0.0 || u + v > 1.0)
+	{
+		throw std::runtime_error("Failed \n");
+	}
+
+	float t = f * edge2.D_product(q);
+
+	if (t > EPSILON)
+	{
+		return t;
+	}
+	else
+	{
+		throw std::runtime_error("Failed \n");
+	}
+
+	
+}
+
+
+
+bool Tetrahedron::ray_intersect(const float origin_x, const float origin_y, const float origin_z, const float dir_x, const float dir_y, const float dir_z)
+{
+	map <float, Vector_3_float> pairs;
+
+	if (Triangle_intersection(origin_x, origin_y, origin_z, dir_x, dir_y, dir_z, first_vertex, second_vertex, third_vertex))
+	{
+		
+
 		Vector_3_float u = second_vertex - first_vertex;
 		Vector_3_float v = third_vertex - first_vertex;
 		Vector_3_float D = fourth_vertex - first_vertex;
 
 		Vector_3_float Normal = u.V_product(v);
 
-		if (Greater(Normal.D_product(D), 0.0f))
+		if (Normal.D_product(D) > 0.0)
 		{
-			Normal = Normal * -1.0f;
-			return Normal;
+			Normal = Normal * -1.0;
+			
 		}
 
-		return Normal;
+		Normal.normalize();
+
+		pairs.insert(make_pair(return_param(origin_x, origin_y, origin_z, dir_x, dir_y, dir_z, first_vertex, second_vertex, third_vertex), Normal));
 
 	}
 
-	if (check_point(x, y, z, second_vertex, third_vertex, fourth_vertex))
+	if (Triangle_intersection(origin_x, origin_y, origin_z, dir_x, dir_y, dir_z, second_vertex, third_vertex, fourth_vertex))
 	{
+
 		Vector_3_float u = third_vertex - second_vertex;
 		Vector_3_float v = fourth_vertex - second_vertex;
 		Vector_3_float D = first_vertex - second_vertex;
+
 		Vector_3_float Normal = u.V_product(v);
 
-		if (Greater(Normal.D_product(D), 0.0f))
+		if (Normal.D_product(D) > 0.0)
 		{
-			Normal = Normal * -1.0f;
-			return Normal;
+			Normal = Normal * -1.0;
+
 		}
 
-		return Normal;
+		Normal.normalize();
+
+		pairs.insert(make_pair(return_param(origin_x, origin_y, origin_z, dir_x, dir_y, dir_z, second_vertex, third_vertex, fourth_vertex), Normal));
 	}
 
-
-	if (check_point(x, y, z, first_vertex, second_vertex, fourth_vertex))
+	if (Triangle_intersection(origin_x, origin_y, origin_z, dir_x, dir_y, dir_z, first_vertex, second_vertex, fourth_vertex))
 	{
+
 		Vector_3_float u = second_vertex - first_vertex;
 		Vector_3_float v = fourth_vertex - first_vertex;
 		Vector_3_float D = third_vertex - first_vertex;
+
 		Vector_3_float Normal = u.V_product(v);
 
-		if (Greater(Normal.D_product(D), 0.0f))
+		if (Normal.D_product(D) > 0.0)
 		{
-			Normal = Normal * -1.0f;
-			return Normal;
+			Normal = Normal * -1.0;
+
 		}
 
-		return Normal;
+		Normal.normalize();
+
+		pairs.insert(make_pair(return_param(origin_x, origin_y, origin_z, dir_x, dir_y, dir_z, first_vertex, second_vertex, fourth_vertex), Normal));
 	}
 
-	if (check_point(x, y, z, first_vertex, third_vertex, fourth_vertex))
+	if (Triangle_intersection(origin_x, origin_y, origin_z, dir_x, dir_y, dir_z, first_vertex, third_vertex, fourth_vertex))
 	{
 
 		Vector_3_float u = third_vertex - first_vertex;
 		Vector_3_float v = fourth_vertex - first_vertex;
 		Vector_3_float D = second_vertex - first_vertex;
+
 		Vector_3_float Normal = u.V_product(v);
 
-		if (Greater(Normal.D_product(D), 0.0f))
+		if (Normal.D_product(D) > 0.0)
 		{
-			Normal = Normal * -1.0f;
-			return Normal;
+			Normal = Normal * -1.0;
+
 		}
 
-		return Normal;
+		Normal.normalize();
+
+		pairs.insert(make_pair(return_param(origin_x, origin_y, origin_z, dir_x, dir_y, dir_z, first_vertex, third_vertex, fourth_vertex), Normal));
 	}
 
+
+	if (pairs.size() == 0)
+	{
+		return false;
+	}
+
+	/*for (auto const& v : pairs) cout << v.first << endl;*/
+
+	map <float, Vector_3_float> ::iterator it = pairs.begin();
+
+	Vector_3_float origin(origin_x, origin_y, origin_z);
+	Vector_3_float direction(dir_x, dir_y, dir_z);
+
+	float param = it->first;
+
+	Normal_ = it->second;
+
+	Point_ = origin + direction * param;
+	
+	return true;
+
 }
+
 
 Tetrahedron::~Tetrahedron()
 {
@@ -1753,6 +1730,20 @@ Light::~Light()
 int main()
 {
 
+
+	/*Vector_3_float a(1.0, 1.0, -1.0);
+	Vector_3_float b(0.6, 0.4, 1.0);
+
+	cout << (a ^ b) << endl;
+
+	if (!is_equal((a ^ b), 90.0f))
+	{
+		cout << "WRONG" << endl;
+	}
+
+
+		return 1;*/
+
 	try
 	{
 		Spectator camera;
@@ -2005,7 +1996,7 @@ int main()
 		Vector_3_float center(screen.get_x(), screen.get_y(), screen.get_z());
 		Vector_3_float viewer(camera.get_x(), camera.get_y(), camera.get_z());
 
-		if (!is_equal(up ^ normal, 90.0f))
+		if (fabs((up ^ normal) - 90.0f) > 0.0001)
 		{
 			throw std::runtime_error("Wrong angle betwen normal and up\n");
 		}
@@ -2022,119 +2013,125 @@ int main()
 			randomColor[1] = 8 * g;
 			randomColor[2] = 8 * g;
 
-//#pragma omp parallel for
+#pragma omp parallel for
 
 			for (int j = 0; j < screen.get_height(); j++)
 			{
 				for (int i = 0; i < screen.get_width(); i++)
 				{
-					int Cx = 0;
-					int Cy = 0;
 
-					if (screen.get_width() % 2 == 0)
-					{
-						Cx = i - screen.get_width() / 2;
-					}
 
-					if (screen.get_width() % 2 != 0)
-					{
-						Cx = i - (screen.get_width() - 1) / 2;
-					}
+					
+						int Cx = 0;
+						int Cy = 0;
 
-					if (screen.get_height() % 2 == 0)
-					{
-						Cy = (screen.get_height() / 2) - j;
-					}
+						if (screen.get_width() % 2 == 0)
+						{
+							Cx = i - screen.get_width() / 2;
+						}
 
-					if (screen.get_height() % 2 != 0)
-					{
-						Cy = ((screen.get_height() - 1) / 2) - j;
-					}
+						if (screen.get_width() % 2 != 0)
+						{
+							Cx = i - (screen.get_width() - 1) / 2;
+						}
+
+						if (screen.get_height() % 2 == 0)
+						{
+							Cy = (screen.get_height() / 2) - j;
+						}
+
+						if (screen.get_height() % 2 != 0)
+						{
+							Cy = ((screen.get_height() - 1) / 2) - j;
+						}
 
 						//// Cx, Cy - координаты точки в плоскости экрана, через которую надо пускать луч, которую надо красить
 
-					float Vx = (float)Cx / (float)screen.get_width(); ///// Объемные координаты точки в плоскости, через которую надо пускать луч, но нету Vz??
-					float Vy = (float)Cy / (float)screen.get_width();
+						float Vx = (float)Cx / (float)screen.get_width(); ///// Объемные координаты точки в плоскости, через которую надо пускать луч, но нету Vz??
+						float Vy = (float)Cy / (float)screen.get_width();
 
-					Vector_3_float unit_up(up.get_v1(), up.get_v2(), up.get_v3());
-					Vector_3_float unit_tangent(tangent.get_v1(), tangent.get_v2(), tangent.get_v3());
-					Vector_3_float current;
+						Vector_3_float unit_up(up.get_v1(), up.get_v2(), up.get_v3());
+						Vector_3_float unit_tangent(tangent.get_v1(), tangent.get_v2(), tangent.get_v3());
+						Vector_3_float current;
 
-					unit_up.normalize();
-					unit_tangent.normalize();
+						unit_up.normalize();
+						unit_tangent.normalize();
 
-					unit_tangent = unit_tangent * -1.0; ////////
+						unit_tangent = unit_tangent * -1.0; ////////
 
-					current = unit_up * Vy + unit_tangent * Vx;
+						current = unit_up * Vy + unit_tangent * Vx;
 
-					Vector_3_float dir = center + current - viewer;
+						Vector_3_float dir = center + current - viewer;
 
-					//cout << "i am here" << endl;
+						//cout << "i am here" << endl;
 
-					float origin_x = viewer.get_v1(); /// Точка из которой должен идти луч. dir - Луч
-					float origin_y = viewer.get_v2();
-					float origin_z = viewer.get_v3();
+						float origin_x = viewer.get_v1(); /// Точка из которой должен идти луч. dir - Луч
+						float origin_y = viewer.get_v2();
+						float origin_z = viewer.get_v3();
 
-					float dir1 = dir.get_v1();
-					float dir2 = dir.get_v2();
-					float dir3 = dir.get_v3();
+						float dir1 = dir.get_v1();
+						float dir2 = dir.get_v2();
+						float dir3 = dir.get_v3();
 
-					Vector_3_float forward = center - viewer;
-					Vector_3_float variation = forward + unit_up * Vy;
+						Vector_3_float forward = center - viewer;
+						Vector_3_float variation = forward + unit_up * Vy;
 
-					if (Greater(forward ^ variation, (camera.get_angle_of_view() / 2.0f)))
-					{
-						continue;
-					}
-
-					if (L->ray_intersect(origin_x, origin_y, origin_z, dir.get_v1(), dir.get_v2(), dir.get_v3()))
-					{
-						Vector_3_float point = L->ret_point(origin_x, origin_y, origin_z, dir.get_v1(), dir.get_v2(), dir.get_v3()); // Точка точно на поверхности
-						Vector_3_float normal_surface = L->ret_normal(point.get_v1(), point.get_v2(), point.get_v3()); //  Вызываю нормаль с точки, которая уже на поверхности
-						Vector_3_float light(lamp.get_x(), lamp.get_y(), lamp.get_z()); // Вектор до света
-						Vector_3_float point_to_lamp = light - point; // Вектор от точки на поверхности до лампы
-						Vector_3_float reflection;
-						Vector_3_float lamp_to_point = point - light;
-						Vector_3_float point_to_camera = viewer - point;
-
-						normal_surface.normalize();
-						point_to_lamp.normalize();
-
-						unsigned char curcolor[3];
-						curcolor[0] = randomColor[0];
-						curcolor[1] = randomColor[1];
-						curcolor[2] = randomColor[2];
-
-						float light_intense = point_to_lamp.D_product(normal_surface);
-
-						if (light_intense <= 0)
+						if (Greater(forward ^ variation, (camera.get_angle_of_view() / 2.0f)))
 						{
-							curcolor[0] = (char)0;
-							curcolor[1] = (char)0;
-							curcolor[2] = (char)0;
-
-							image.draw_point(i, j, curcolor);
-
 							continue;
 						}
 
-						/*reflection = lamp_to_point - normal_surface * 2 * (lamp_to_point.D_product(normal_surface));
+						if (L->ray_intersect(origin_x, origin_y, origin_z, dir.get_v1(), dir.get_v2(), dir.get_v3()))
+						{
+							Vector_3_float point = L->ret_point(origin_x, origin_y, origin_z, dir.get_v1(), dir.get_v2(), dir.get_v3()); // Точка точно на поверхности
+							Vector_3_float normal_surface = L->ret_normal(point.get_v1(), point.get_v2(), point.get_v3()); //  Вызываю нормаль с точки, которая уже на поверхности
+							Vector_3_float light(lamp.get_x(), lamp.get_y(), lamp.get_z()); // Вектор до света
+							Vector_3_float point_to_lamp = light - point; // Вектор от точки на поверхности до лампы
+							Vector_3_float reflection;
+							Vector_3_float lamp_to_point = point - light;
+							Vector_3_float point_to_camera = viewer - point;
 
-						reflection.normalize();
+							normal_surface.normalize();
+							point_to_lamp.normalize();
 
-						float phong_intense;
-						float mirror_coeff = 0.82f;
-						float diffuse_coeff = 0.46f;
+							unsigned char curcolor[3];
+							curcolor[0] = randomColor[0];
+							curcolor[1] = randomColor[1];
+							curcolor[2] = randomColor[2];
 
-						float shine = 0.75;*/
+							float light_intense = point_to_lamp.D_product(normal_surface);
 
-						curcolor[0] = curcolor[1] = curcolor[2] = curcolor[0] * light_intense;
+							if (light_intense <= 0)
+							{
+								curcolor[0] = (char)0;
+								curcolor[1] = (char)0;
+								curcolor[2] = (char)0;
 
-						/*phong_intense = -diffuse_coeff * (normal_surface.D_product( lamp_to_point)) + mirror_coeff * pow((normal_surface.D_product(reflection)), shine);*/
+								image.draw_point(i, j, curcolor);
 
-						image.draw_point(i, j, curcolor);
+								continue;
+							}
 
-					}
+							/*reflection = lamp_to_point - normal_surface * 2 * (lamp_to_point.D_product(normal_surface));
+
+							reflection.normalize();
+
+							float phong_intense;
+							float mirror_coeff = 0.82f;
+							float diffuse_coeff = 0.46f;
+
+							float shine = 0.75;*/
+
+							curcolor[0] = curcolor[1] = curcolor[2] = curcolor[0] * light_intense;
+
+							/*phong_intense = -diffuse_coeff * (normal_surface.D_product( lamp_to_point)) + mirror_coeff * pow((normal_surface.D_product(reflection)), shine);*/
+
+							image.draw_point(i, j, curcolor);
+
+						}
+					
+
+					
 				}
 			}
 		}
