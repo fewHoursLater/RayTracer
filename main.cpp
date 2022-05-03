@@ -15,6 +15,8 @@
 #include <map>
 #include "CImg.h"
 
+#pragma warning(disable : 4244)
+#pragma warning(disable : 26451) 
 
 constexpr float Pi = 3.141592f;
 constexpr float BIAS = 1e-8f;
@@ -73,6 +75,7 @@ public:
 	Vector_3_float operator+(const Vector_3_float&);
 	Vector_3_float operator-(const Vector_3_float&);
 	Vector_3_float operator*(const float&);
+	Vector_3_float operator/(const float&);
 	float operator^(const Vector_3_float&);
 
 	Vector_3_float V_product(const Vector_3_float&);
@@ -142,6 +145,14 @@ Vector_3_float Vector_3_float::operator*(const float& value)
 
 	return rez;
 }
+
+Vector_3_float Vector_3_float::operator/(const float& value)
+{
+	Vector_3_float rez(this->get_v1() / value, this->get_v2() / value, this->get_v3() / value);
+
+	return rez;
+}
+
 
 float Vector_3_float::operator^(const Vector_3_float& other)
 {
@@ -221,8 +232,9 @@ float Volume(Vector_3_float U, Vector_3_float V, Vector_3_float W)
 
 class Figure
 {
-private:
+protected:
 
+	int color;
 
 public:
 	Figure();
@@ -231,11 +243,16 @@ public:
 	virtual bool ray_intersect(const float, const float, const float, const float, const float, const float) = 0;
 	virtual Vector_3_float ret_point(const float, const float, const float, const float, const float, const float) = 0;
 	virtual Vector_3_float ret_normal(const float, const float, const float) = 0;
+	virtual Vector_3_float return_centroid() = 0;
+
+	virtual void set_color(int) = 0;
+	virtual int get_color() = 0;
 
 };
 
 Figure::Figure()
 {
+	color = 0;
 }
 
 Figure::~Figure()
@@ -266,6 +283,10 @@ public:
 	bool ray_intersect(const float, const float, const float, const float, const float, const float) override;
 	Vector_3_float ret_point(const float, const float, const float, const float, const float, const float) override;
 	Vector_3_float ret_normal(const float, const float, const float) override;
+	Vector_3_float return_centroid() override;
+
+	void set_color(int) override;
+	int get_color() override;
 
 	float get_x(void);
 	float get_y(void);
@@ -394,6 +415,21 @@ void Sphere::set_R(const float R)
 	R_ = R;
 }
 
+Vector_3_float Sphere::return_centroid()
+{
+	return Vector_3_float(x_, y_, z_);
+}
+
+void Sphere::set_color(int color_)
+{
+	color = color_;
+}
+
+int Sphere::get_color()
+{
+	return color;
+}
+
 Sphere::~Sphere()
 {
 }
@@ -412,6 +448,10 @@ public:
 	bool ray_intersect(const float, const float, const float, const float, const float, const float) override;
 	Vector_3_float ret_point(const float, const float, const float, const float, const float, const float) override;
 	Vector_3_float ret_normal(const float, const float, const float) override;
+	Vector_3_float return_centroid() override;
+
+	void set_color(int) override;
+	int get_color() override;
 
 
 };
@@ -438,10 +478,6 @@ Box::Box(const float x1, const float y1, const float z1, const float x2, const f
 	begin = A;
 	end = B;
 
-}
-
-Box::~Box()
-{
 }
 
 bool Box::ray_intersect(const float origin_x, const float origin_y, const float origin_z, const float dir_x, const float dir_y, const float dir_z)
@@ -1066,6 +1102,25 @@ Vector_3_float Box::ret_normal(const float x, const float y, const float z) // Т
 
 }
 
+Vector_3_float Box::return_centroid()
+{
+	return (end - begin) / 2.0f;
+}
+
+void Box::set_color(int color_)
+{
+	color = color_;
+}
+
+int Box::get_color()
+{
+	return color;
+}
+
+Box::~Box()
+{
+}
+
 class Tetrahedron : public Figure
 {
 private:
@@ -1086,10 +1141,13 @@ public:
 
 	Vector_3_float ret_point(const float, const float, const float, const float, const float, const float) override;
 	Vector_3_float ret_normal(const float, const float, const float) override;
+	Vector_3_float return_centroid() override;
 
 	friend bool Triangle_intersection(const float, const float, const float, const float, const float, const float, Vector_3_float, Vector_3_float, Vector_3_float);
 	friend float return_param(const float, const float, const float, const float, const float, const float, Vector_3_float, Vector_3_float, Vector_3_float);
 	
+	void set_color(int) override;
+	int get_color() override;
 
 };
 
@@ -1130,7 +1188,7 @@ bool Triangle_intersection(const float origin_x, const float origin_y, const flo
 	Vector_3_float origin(origin_x, origin_y, origin_z);
 	Vector_3_float direction(dir_x, dir_y, dir_z);
 
-	const float EPSILON = 0.0001;
+	const float EPSILON = 0.0001f;
 
 	Vector_3_float vertex0 = v0_;
 	Vector_3_float vertex1 = v1_;
@@ -1179,16 +1237,12 @@ bool Triangle_intersection(const float origin_x, const float origin_y, const flo
 	}
 
 }
-
-
-
-
 float return_param(const float origin_x, const float origin_y, const float origin_z, const float dir_x, const float dir_y, const float dir_z, Vector_3_float v0_, Vector_3_float v1_, Vector_3_float v2_)
 {
 	Vector_3_float origin(origin_x, origin_y, origin_z);
 	Vector_3_float direction(dir_x, dir_y, dir_z);
 
-	const float EPSILON = 0.0001;
+	const float EPSILON = 0.0001f;
 
 	Vector_3_float vertex0 = v0_;
 	Vector_3_float vertex1 = v1_;
@@ -1239,9 +1293,6 @@ float return_param(const float origin_x, const float origin_y, const float origi
 
 	
 }
-
-
-
 bool Tetrahedron::ray_intersect(const float origin_x, const float origin_y, const float origin_z, const float dir_x, const float dir_y, const float dir_z)
 {
 	map <float, Vector_3_float> pairs;
@@ -1351,6 +1402,23 @@ bool Tetrahedron::ray_intersect(const float origin_x, const float origin_y, cons
 
 }
 
+
+Vector_3_float Tetrahedron::return_centroid()
+{
+	Vector_3_float center = (first_vertex + second_vertex + third_vertex + fourth_vertex) / 4.0f;
+
+	return center;
+}
+
+void Tetrahedron::set_color(int color_)
+{
+	color = color_;
+}
+
+int Tetrahedron::get_color()
+{
+	return color;
+}
 
 Tetrahedron::~Tetrahedron()
 {
@@ -1729,7 +1797,34 @@ Light::~Light()
 
 int main()
 {
+	
+	
 
+	
+	/*
+	map <int, int> color_map;
+
+	
+
+	color_map.insert(make_pair(1, 64));
+	color_map.insert(make_pair(2, 68));
+	color_map.insert(make_pair(3, 191));
+
+	
+
+	map <int, int> ::iterator color_it = color_map.end();
+
+	color_it--;
+
+	cout << color_it->second << endl;
+
+	int tmp_distance = 3;
+
+	int cur_color = color_map.find(3)->second;
+
+	cout << cur_color << endl;
+
+	return 1;*/
 
 	/*Vector_3_float a(1.0, 1.0, -1.0);
 	Vector_3_float b(0.6, 0.4, 1.0);
@@ -2000,18 +2095,59 @@ int main()
 		{
 			throw std::runtime_error("Wrong angle betwen normal and up\n");
 		}
+		/// 1. Все точки фигур должны быть между двумя плоскостями !
+		/// 2. Доработать глянец
+		/// 3. Распределить цвет !
+
 
 		CImg<unsigned char> image(screen.get_width(), screen.get_height(), 1, 3, 0);
 
+		map<float, Figure*> color_map;
+
+		for (auto j : shapes)
+		{
+			Vector_3_float center_of_body = j->return_centroid();
+			Vector_3_float tmp_forward = center - viewer;
+
+			float tmp = center_of_body.D_product(tmp_forward);
+
+			color_map.insert(make_pair(tmp,j));
+
+		}
+
+		int g = 0;
+
+		for (auto y : color_map)
+		{
+			cout << y.first << endl;
+		}
+
+		cout << endl;
+
+		for (auto y : color_map)
+		{
+			y.second->set_color(64 + 8 * g);
+			g++;
+		}
+
+		map <float, Figure*>::iterator color_it = color_map.begin();
+
+		color_it->second->set_color(191);
+
+		color_it = color_map.end();
+
+		color_it--;
+
+		color_it->second->set_color(64);
+
 		for (auto L : shapes)
 		{
+
 			int randomColor[3];
 
-			int g = rand() % 31 + 1;
-
-			randomColor[0] = 8 * g;
-			randomColor[1] = 8 * g;
-			randomColor[2] = 8 * g;
+			randomColor[0] = L->get_color();
+			randomColor[1] = L->get_color();
+			randomColor[2] = L->get_color();
 
 #pragma omp parallel for
 
@@ -2047,7 +2183,7 @@ int main()
 
 						//// Cx, Cy - координаты точки в плоскости экрана, через которую надо пускать луч, которую надо красить
 
-						float Vx = (float)Cx / (float)screen.get_width(); ///// Объемные координаты точки в плоскости, через которую надо пускать луч, но нету Vz??
+						float Vx = (float)Cx / (float)screen.get_width(); ///// Объемные координаты точки в плоскости, через которую надо пускать луч
 						float Vy = (float)Cy / (float)screen.get_width();
 
 						Vector_3_float unit_up(up.get_v1(), up.get_v2(), up.get_v3());
@@ -2073,7 +2209,7 @@ int main()
 						float dir2 = dir.get_v2();
 						float dir3 = dir.get_v3();
 
-						Vector_3_float forward = center - viewer;
+						Vector_3_float forward = center - viewer; // луч, идущий от камеры в центр экрана
 						Vector_3_float variation = forward + unit_up * Vy;
 
 						if (Greater(forward ^ variation, (camera.get_angle_of_view() / 2.0f)))
@@ -2084,17 +2220,30 @@ int main()
 						if (L->ray_intersect(origin_x, origin_y, origin_z, dir.get_v1(), dir.get_v2(), dir.get_v3()))
 						{
 							Vector_3_float point = L->ret_point(origin_x, origin_y, origin_z, dir.get_v1(), dir.get_v2(), dir.get_v3()); // Точка точно на поверхности
-							Vector_3_float normal_surface = L->ret_normal(point.get_v1(), point.get_v2(), point.get_v3()); //  Вызываю нормаль с точки, которая уже на поверхности
-							Vector_3_float light(lamp.get_x(), lamp.get_y(), lamp.get_z()); // Вектор до света
-							Vector_3_float point_to_lamp = light - point; // Вектор от точки на поверхности до лампы
-							Vector_3_float reflection;
-							Vector_3_float lamp_to_point = point - light;
-							Vector_3_float point_to_camera = viewer - point;
+							Vector_3_float normal_surface = L->ret_normal(point.get_v1(), point.get_v2(), point.get_v3()); //  Нормаль из точки, которая уже на поверхности
 
 							normal_surface.normalize();
+
+							Vector_3_float limit = normal * camera.get_dist_spec_scene();
+							Vector_3_float from_center_to_point = point - center;
+
+							if (fabs((from_center_to_point.magnitude()*cos(Pi*(limit^from_center_to_point)/180.0f)- 20.0f)>0.001 || from_center_to_point.magnitude() * cos(Pi * (limit ^ from_center_to_point) / 180.0) < 0.001))
+							{
+								throw std::runtime_error("Shapes is out of range.\n");
+							}
+
+							Vector_3_float light(lamp.get_x(), lamp.get_y(), lamp.get_z()); // Вектор света
+							Vector_3_float point_to_lamp = light - point; // Вектор от точки на поверхности до света
+
+							Vector_3_float reflection; // Отраженный луч
+							Vector_3_float lamp_to_point = point - light; // От света до точки на поверхности
+							Vector_3_float point_to_camera = viewer - point; // От точки к камере
+
+							
 							point_to_lamp.normalize();
 
 							unsigned char curcolor[3];
+
 							curcolor[0] = randomColor[0];
 							curcolor[1] = randomColor[1];
 							curcolor[2] = randomColor[2];
@@ -2122,6 +2271,7 @@ int main()
 
 							float shine = 0.75;*/
 
+							
 							curcolor[0] = curcolor[1] = curcolor[2] = curcolor[0] * light_intense;
 
 							/*phong_intense = -diffuse_coeff * (normal_surface.D_product( lamp_to_point)) + mirror_coeff * pow((normal_surface.D_product(reflection)), shine);*/
@@ -2136,7 +2286,12 @@ int main()
 			}
 		}
 
+		
 		image.display();
+
+
+		image.normalize(0, 255);
+		image.save_bmp("render.bmp");
 
 		return 0;
 	}
